@@ -21,13 +21,13 @@ export const tracksData=[
       },
       {
         id: 3,
-        name: "Good-Night",
-        artist: "Wave Collective",
+        name: "Lofi-Relax-Music",
+        artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
-        color: "bg-pink-500",
-        coverArt: "./images/goodnight.jpg",
-        audioUrl: "./audio/good-night.mp3"
+        color: "bg-green-500",
+        coverArt: "./images/lofi-relax.jpg",
+        audioUrl: "./audio/lofi-relax-music.mp3"
       },
       {
         id: 4,
@@ -41,23 +41,23 @@ export const tracksData=[
       },
       {
         id: 5,
-        name: "Lofi-Relax-Music",
-        artist: "Harmony Hub",
+        name: "Good-Night",
+        artist: "Wave Collective",
         volume: 50,
         isPlaying: false,
-        color: "bg-green-500",
-        coverArt: "./images/lofi-relax.jpg",
-        audioUrl: "./audio/lofi-relax-music.mp3"
+        color: "bg-pink-500",
+        coverArt: "./images/goodnight.jpg",
+        audioUrl: "./audio/good-night.mp3"
       },
       {
         id: 6,
-        name: "Lofi-Song-Backyard",
+        name: "Please-Calm-My-Mind",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
         color: "bg-green-500",
-        coverArt: "./images/lofi-song-backyard.jpg",
-        audioUrl: "./audio/lofi-song-backyard.mp3"
+        coverArt: "./images/please-calm-my-mind.jpeg",
+        audioUrl: "./audio/please-calm-my-mind.mp3"
       },
       {
         id: 7,
@@ -81,13 +81,13 @@ export const tracksData=[
       },
       {
         id: 9,
-        name: "Please-Calm-My-Mind",
+        name: "Lofi-Song-Backyard",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
         color: "bg-green-500",
-        coverArt: "./images/please-calm-my-mind.jpeg",
-        audioUrl: "./audio/please-calm-my-mind.mp3"
+        coverArt: "./images/lofi-song-backyard.jpg",
+        audioUrl: "./audio/lofi-song-backyard.mp3"
       },
       {
         id: 10,
