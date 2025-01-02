@@ -1,31 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, Play, Pause, Music } from 'lucide-react';
+import { Volume2, Play, Pause, Music, Home, Settings, Moon, Sun, Coffee } from 'lucide-react';
 import { Howl } from 'howler';
 import { tracksData } from './tracks';
 
+const Navbar = () => {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/20">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-4">
+            <Home className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+            <Coffee className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+          </div>
+          <div className="text-xl font-bold text-white/90">Lofi Mixer</div>
+          <div className="flex items-center space-x-4">
+            <Moon className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+            <Settings className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
 
 const VolumeSlider = ({ value, onChange }) => {
   return (
-    <input
-      type="range"
-      min="0"
-      max="100"
-      value={value}
-      onChange={(e) => onChange(parseInt(e.target.value))}
-      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-      style={{
-        background: `linear-gradient(to right, #ffffff ${value}%, #374151 ${value}%)`
-      }}
-    />
+    <div className="relative group w-full">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-full h-2 bg-gray-700/50 rounded-full appearance-none cursor-pointer 
+                 hover:bg-gray-600/50 transition-all"
+        style={{
+          background: `linear-gradient(to right, rgba(16, 185, 129, 0.8) ${value}%, rgba(31, 41, 55, 0.3) ${value}%)`
+        }}
+      />
+    </div>
   );
 };
 
 const LofiMixer = () => {
   const [tracks, setTracks] = useState(tracksData);
-  // Store Howl instances
   const howlRefs = useRef({});
 
-  // Initialize Howl instances
+  // Initialize Howl instances (same as before)
   useEffect(() => {
     tracks.forEach(track => {
       if (!howlRefs.current[track.id]) {
@@ -33,50 +54,15 @@ const LofiMixer = () => {
           src: [track.audioUrl],
           html5: true,
           loop: true,
-          volume: track.volume / 100,
-          onload: () => {
-            console.log(`Track ${track.id} loaded`);
-          },
-          onloaderror: (id, error) => {
-            console.error(`Error loading track ${track.id}:`, error);
-          }
+          volume: track.volume / 100
         });
       }
     });
 
-    // Cleanup on unmount
     return () => {
       Object.values(howlRefs.current).forEach(howl => howl.unload());
     };
   }, []);
-
-  const [visualizer, setVisualizer] = useState([]);
-  const animationFrameRef = useRef();
-
-  useEffect(() => {
-    const updateVisualizer = () => {
-      // Create more natural-looking visualizer data based on playing tracks
-      const playingTracks = tracks.filter(track => track.isPlaying);
-      if (playingTracks.length > 0) {
-        setVisualizer(Array.from({ length: 20 }, () => {
-          const baseHeight = 30; // minimum height
-          const variableHeight = 70; // maximum additional height
-          return baseHeight + Math.random() * variableHeight;
-        }));
-      } else {
-        setVisualizer(Array.from({ length: 20 }, () => 5)); // minimal movement when no tracks playing
-      }
-      animationFrameRef.current = requestAnimationFrame(updateVisualizer);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(updateVisualizer);
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [tracks]);
 
   const togglePlay = (id) => {
     const howl = howlRefs.current[id];
@@ -107,119 +93,63 @@ const LofiMixer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8 text-white">
-      <div className="max-w-4xl mx-auto">
-        {/* Visualizer */}
-        <div className="mb-12 h-32 flex items-end justify-center gap-1 overflow-hidden">
-          {visualizer.map((height, index) => (
-            <div
-              key={index}
-              className="w-3 bg-gradient-to-t from-purple-500 to-blue-500 rounded-t transition-all duration-100"
-              style={{ height: `${height}%` }}
-            />
-          ))}
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <Navbar />
+      <div className="fixed inset-0 opacity-50">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(17,24,39,0.8),rgba(17,24,39,0.4))]" />
+      </div>
 
-        {/* Tracks */}
-        <div className="grid gap-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 pt-24 pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tracks.map(track => (
             <div
               key={track.id}
-              className={`p-6 rounded-lg bg-gray-800 border border-gray-700 
-                hover:border-opacity-50 transition-all duration-300`}
-              style={{
-                borderColor: track.isPlaying ? track.color.replace('bg-', '') : 'transparent'
-              }}
+              className="group relative bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden 
+                       transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl 
+                       border border-white/10"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  {/* Cover Art */}
-                  <div className={`relative w-16 h-16 rounded-lg overflow-hidden ${track.isPlaying ? 'animate-pulse' : ''}`}>
-                    <img
-                      src={track.coverArt}
-                      alt={`${track.name} cover`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black opacity-30" />
-                  </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60" />
+              
+              <img
+                src={track.coverArt}
+                alt={track.name}
+                className="w-full h-48 object-cover"
+              />
 
-                  <button
-                    onClick={() => togglePlay(track.id)}
-                    className={`p-3 rounded-full transition-all duration-300 hover:opacity-80`}
-                    style={{
-                      backgroundColor: track.isPlaying 
-                        ? track.color.replace('bg-', '') 
-                        : '#374151'
-                    }}
-                  >
-                    {track.isPlaying ? (
-                      <Pause className="w-6 h-6" />
-                    ) : (
-                      <Play className="w-6 h-6" />
-                    )}
-                  </button>
-                  
-                  <div>
-                    <h3 className="font-semibold text-lg">{track.name}</h3>
-                    <div className="flex items-center gap-2 text-gray-400">
-                      <Music className="w-4 h-4" />
-                      <span className="text-sm">{track.artist}</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 
+                            group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => togglePlay(track.id)}
+                  className="p-4 rounded-full bg-emerald-500/80 hover:bg-emerald-600/80 
+                           transition-all duration-300 backdrop-blur-sm"
+                >
+                  {track.isPlaying ? (
+                    <Pause className="w-8 h-8 text-white" />
+                  ) : (
+                    <Play className="w-8 h-8 text-white" />
+                  )}
+                </button>
+              </div>
 
-                <div className="flex items-center gap-4 w-48">
-                  <Volume2 className="w-5 h-5 text-gray-400" />
+              <div className="p-4">
+                <h3 className="font-medium text-lg text-white mb-1">{track.name}</h3>
+                <p className="text-gray-400 text-sm flex items-center gap-2">
+                  <Music className="w-4 h-4" />
+                  {track.artist}
+                </p>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <Volume2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <VolumeSlider
                     value={track.volume}
                     onChange={(value) => adjustVolume(track.id, value)}
                   />
                 </div>
               </div>
-              
-              {/* Animated waveform background */}
-              <div className="h-2 w-full rounded-full overflow-hidden bg-gray-700">
-                <div 
-                  className="h-full transition-all duration-300"
-                  style={{ 
-                    width: `${track.volume}%`,
-                    backgroundColor: track.color.replace('bg-', ''),
-                    animation: track.isPlaying ? 'pulse 2s infinite' : 'none'
-                  }}
-                />
-              </div>
             </div>
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes pulse {
-          0% { opacity: 0.7; }
-          50% { opacity: 1; }
-          100% { opacity: 0.7; }
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          background: white;
-          border-radius: 50%;
-          cursor: pointer;
-          border: 2px solid #374151;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          background: white;
-          border-radius: 50%;
-          cursor: pointer;
-          border: 2px solid #374151;
-        }
-      `}</style>
     </div>
   );
 };

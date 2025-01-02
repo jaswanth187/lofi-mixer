@@ -31,7 +31,7 @@ export const tracksData=[
       },
       {
         id: 4,
-        name: "lo-fi-chill-serene-vibes",
+        name: "Lofi-Chill-Serene-Vibes",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -41,7 +41,7 @@ export const tracksData=[
       },
       {
         id: 5,
-        name: "lo-fi-relax-music",
+        name: "Lofi-Relax-Music",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -51,7 +51,7 @@ export const tracksData=[
       },
       {
         id: 6,
-        name: "lofi-song-backyard",
+        name: "Lofi-Song-Backyard",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -61,7 +61,7 @@ export const tracksData=[
       },
       {
         id: 7,
-        name: "lofi-song-toybox",
+        name: "Lofi-Song-Toybox",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -71,7 +71,7 @@ export const tracksData=[
       },
       {
         id: 8,
-        name: "lofi-study-calm-peaceful",
+        name: "Lofi-Study-Calm-Peaceful",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -81,7 +81,7 @@ export const tracksData=[
       },
       {
         id: 9,
-        name: "please-calm-my-mind",
+        name: "Please-Calm-My-Mind",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
@@ -101,7 +101,7 @@ export const tracksData=[
       },
       {
         id: 11,
-        name: "step-into-serenity",
+        name: "Step-Into-Serenity",
         artist: "Harmony Hub",
         volume: 50,
         isPlaying: false,
