@@ -1,0 +1,23 @@
+.authContainer {
+    @apply min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+  }
+  
+  .authForm {
+    @apply bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-xl w-full max-w-md space-y-6;
+  }
+  
+  .authTitle {
+    @apply text-3xl font-bold text-white text-center mb-8;
+  }
+  
+  .authInput {
+    @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-emerald-500;
+  }
+  
+  .authButton {
+    @apply w-full py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors;
+  }
+  
+  .googleButton {
+    @apply w-full py-3 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors mt-4;
+  }
