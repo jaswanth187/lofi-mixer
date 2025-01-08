@@ -46,6 +46,12 @@ export default function Register() {
         <button type="submit" className={styles.authButton}>
           Register
         </button>
+        <button 
+          onClick={() => window.location.href = 'http://localhost:3000/auth/google'}
+          className={styles.googleButton}
+        >
+          Register with Google
+        </button>
       </form>
     </div>
   );

@@ -14,7 +14,7 @@ export default function Login() {
     try {
       const data = await loginUser(credentials);
       login(data.user);
-      navigate('/');
+      navigate('/'); // Redirect to root path after successful login
     } catch (error) {
       console.error('Login failed:', error);
     }

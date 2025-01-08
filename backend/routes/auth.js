@@ -7,7 +7,8 @@ const router = express.Router();
 // Google OAuth Routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
-  res.redirect('/dashboard');
+  // Send user data to frontend
+  res.redirect(`http://localhost:3001?user=${encodeURIComponent(JSON.stringify(req.user))}`);
 });
 
 // Manual Login Routes
@@ -75,6 +76,5 @@ router.post('/register', async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;

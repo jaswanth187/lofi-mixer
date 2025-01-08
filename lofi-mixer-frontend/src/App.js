@@ -3,26 +3,34 @@ import LofiMixer from './components/LofiMixer/LofiMixer';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import { AuthProvider } from './components/context/AuthContext';
-import ProtectedRoute from './components/Layout/ProtectedRoute';
+import PublicRoute from './components/Layout/PublicRoute';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route 
-            path="/" 
+            path="/login" 
             element={
-              <ProtectedRoute>
-                <LofiMixer />
-              </ProtectedRoute>
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
             } 
           />
+          <Route 
+            path="/register" 
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            } 
+          />
+          <Route path="/" element={<LofiMixer />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
 }
+
 export default App;
