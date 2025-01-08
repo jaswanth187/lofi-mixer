@@ -1,28 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Play, Pause, Music } from 'lucide-react';
-import { Howl } from 'howler';
+import { Howl, Howler } from 'howler';
 import { tracksData } from '../../tracks';
 import Navbar from '../Layout/Navbar';
-
-// const Navbar = () => {
-//   return (
-//     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/20">
-//       <div className="max-w-7xl mx-auto px-4">
-//         <div className="flex items-center justify-between h-16">
-//           <div className="flex items-center space-x-4">
-//             <Home className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-//             <Coffee className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-//           </div>
-//           <div className="text-xl font-bold text-white/90">Lofi Mixer</div>
-//           <div className="flex items-center space-x-4">
-//             <Moon className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-//             <Settings className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-//           </div>
-//         </div>
-//       </div>
-//     </nav>
-//   );
-// };
 
 const VolumeSlider = ({ value, onChange }) => {
   return (
@@ -42,55 +22,124 @@ const VolumeSlider = ({ value, onChange }) => {
     </div>
   );
 };
+
 const LofiMixer = () => {
   const [tracks, setTracks] = useState(tracksData);
+  const [audioInitialized, setAudioInitialized] = useState(false);
+  const [loadingTrackId, setLoadingTrackId] = useState(null);
   const howlRefs = useRef({});
+  const loadedTracks = useRef(new Set());
 
-  // Initialize Howl instances (same as before)
-  useEffect(() => {
-    tracks.forEach(track => {
-      if (!howlRefs.current[track.id]) {
-        howlRefs.current[track.id] = new Howl({
-          src: [track.audioUrl],
-          html5: true,
-          loop: true,
-          volume: track.volume / 100
-        });
-      }
-    });
+  // Function to load a single track
+  const loadTrack = async (track) => {
+    if (loadedTracks.current.has(track.id)) return;
 
-    return () => {
-      Object.values(howlRefs.current).forEach(howl => howl.unload());
-    };
-  }, [tracks]);
-
-  const togglePlay = (id) => {
-    const howl = howlRefs.current[id];
-    if (!howl) return;
-
-    setTracks(tracks.map(track => {
-      if (track.id === id) {
-        const newIsPlaying = !track.isPlaying;
-        if (newIsPlaying) {
-          howl.play();
-        } else {
-          howl.pause();
+    setLoadingTrackId(track.id);
+    
+    return new Promise((resolve) => {
+      howlRefs.current[track.id] = new Howl({
+        src: [track.audioUrl],
+        html5: true,
+        loop: true,
+        volume: track.volume / 100,
+        onload: () => {
+          console.log(`Loaded track: ${track.name}`);
+          loadedTracks.current.add(track.id);
+          setLoadingTrackId(null);
+          resolve();
+        },
+        onloaderror: (_, error) => {
+          console.error(`Error loading ${track.name}:`, error);
+          setLoadingTrackId(null);
+          resolve();
         }
-        return { ...track, isPlaying: newIsPlaying };
+      });
+    });
+  };
+
+  // Initialize audio and load first track on first play
+  const initializeAudio = async (trackId) => {
+    if (!audioInitialized) {
+      console.log('Initializing audio system...');
+      
+      // Set Howler configuration
+      Howler.autoUnlock = false;
+      Howler.html5PoolSize = 10;
+      
+      try {
+        // Load the clicked track first
+        const trackToLoad = tracks.find(t => t.id === trackId);
+        if (trackToLoad) {
+          await loadTrack(trackToLoad);
+        }
+        
+        setAudioInitialized(true);
+        
+        // Load remaining tracks in background
+        const remainingTracks = tracks.filter(t => t.id !== trackId);
+        for (const track of remainingTracks) {
+          await loadTrack(track);
+        }
+      } catch (error) {
+        console.error('Error initializing audio:', error);
       }
-      return track;
-    }));
+    }
+  };
+
+  const togglePlay = async (id) => {
+    // Initialize audio if this is the first play
+    if (!audioInitialized) {
+      await initializeAudio(id);
+    }
+
+    const howl = howlRefs.current[id];
+    if (!howl || !loadedTracks.current.has(id)) {
+      console.log('Track not ready yet');
+      return;
+    }
+
+    try {
+      // Resume AudioContext if needed
+      if (Howler.ctx?.state === 'suspended') {
+        await Howler.ctx.resume();
+      }
+
+      setTracks(tracks.map(track => {
+        if (track.id === id) {
+          const newIsPlaying = !track.isPlaying;
+          if (newIsPlaying) {
+            howl.play();
+          } else {
+            howl.pause();
+          }
+          return { ...track, isPlaying: newIsPlaying };
+        }
+        return track;
+      }));
+    } catch (error) {
+      console.error('Error playing track:', error);
+    }
   };
 
   const adjustVolume = (id, newVolume) => {
     const howl = howlRefs.current[id];
-    if (!howl) return;
+    if (!howl || !loadedTracks.current.has(id)) return;
 
     howl.volume(newVolume / 100);
     setTracks(tracks.map(track =>
       track.id === id ? { ...track, volume: newVolume } : track
     ));
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(howlRefs.current).forEach(howl => {
+        if (howl) howl.unload();
+      });
+      loadedTracks.current.clear();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
@@ -122,8 +171,11 @@ const LofiMixer = () => {
                   onClick={() => togglePlay(track.id)}
                   className="p-4 rounded-full bg-emerald-500/80 hover:bg-emerald-600/80 
                            transition-all duration-300 backdrop-blur-sm"
+                  disabled={loadingTrackId === track.id}
                 >
-                  {track.isPlaying ? (
+                  {loadingTrackId === track.id ? (
+                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : track.isPlaying ? (
                     <Pause className="w-8 h-8 text-white" />
                   ) : (
                     <Play className="w-8 h-8 text-white" />

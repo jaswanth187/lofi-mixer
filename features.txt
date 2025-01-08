@@ -1,0 +1,5 @@
+next features:
+
+    1, uploading songs.
+    2. removing lyrics.
+    
