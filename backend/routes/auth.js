@@ -39,6 +39,41 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
+// Logout Route
+router.get('/logout', async (req, res) => {
+  try {
+    // Clear session
+    req.logout((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ message: 'Error logging out' });
+      }
+      
+      // Clear session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+        }
+      });
+
+      // Clear all cookies including OAuth cookies
+      const cookies = req.cookies;
+      for (let cookie in cookies) {
+        res.clearCookie(cookie, {
+          path: '/',
+          domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
+        });
+      }
+      
+      res.status(200).json({ message: 'Logout successful' });
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Error logging out' });
+  }
+});
+
+
 // POST route for registration
 router.post('/register', async (req, res) => {
   try {

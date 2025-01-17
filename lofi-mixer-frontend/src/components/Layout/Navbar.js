@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Home, Coffee, Moon } from 'lucide-react';
+import axios from 'axios';
 
 const Navbar = () => {
   const { user, login, logout } = useAuth();
@@ -31,9 +32,21 @@ const Navbar = () => {
     };
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // First call the backend logout endpoint
+      await axios.get('http://localhost:3000/auth/logout', { 
+        withCredentials: true 
+      });
+      
+      // Then clear frontend state and storage
+      await logout();
+      
+      // Finally navigate
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const toggleDropdown = () => {
@@ -41,6 +54,7 @@ const Navbar = () => {
   };
 
   const getInitials = (name) => {
+    if (!name) return '';
     const names = name.split(' ');
     return names.map(n => n[0]).join('');
   };
@@ -62,7 +76,7 @@ const Navbar = () => {
                   className="w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center cursor-pointer"
                   onClick={toggleDropdown}
                 >
-                  {getInitials(user.username)}
+                  <span className="text-center">{getInitials(user.username)}</span>
                 </div>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 text-white rounded-md shadow-lg py-1 z-50">
