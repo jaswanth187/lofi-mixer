@@ -11,7 +11,8 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
   res.redirect(`http://localhost:3001?user=${encodeURIComponent(JSON.stringify(req.user))}`);
 });
 
-// Manual Login Routes
+// Manual Login Routes\
+
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) {
@@ -26,6 +27,9 @@ router.post('/login', (req, res, next) => {
       if (err) {
         return res.status(500).json({ message: 'Error logging in' });
       }
+      
+      // Set session
+      req.session.user = user;
       
       return res.status(200).json({
         message: 'Login successful',

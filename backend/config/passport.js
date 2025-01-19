@@ -1,12 +1,13 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-require('dotenv').config();
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
+require('dotenv').config();
 
+// Serialization
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, user._id);
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -18,6 +19,7 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+// Google Strategy
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -42,20 +44,23 @@ passport.use(new GoogleStrategy({
   }
 }));
 
-
-// Manual Login Strategy
+// Local Strategy
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ username });
     if (!user) {
       return done(null, false, { message: 'Incorrect username.' });
     }
+    
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return done(null, false, { message: 'Incorrect password.' });
     }
+    
     return done(null, user);
   } catch (error) {
     return done(error, null);
   }
 }));
+
+module.exports = passport;

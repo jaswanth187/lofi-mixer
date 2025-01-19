@@ -11,13 +11,14 @@ export const tracksData=[
       },
       {
         id: 2,
-        name: "Ghostrifter",
-        artist: "Chill Beats",
+        name: "Good-Night",
+        artist: "Wave Collective",
         volume: 50,
         isPlaying: false,
-        color: "bg-blue-500",
-        coverArt: "./images/ghostrifter.jpg",
-        audioUrl: "./audio/Ghostrifter.mp3"
+        color: "bg-pink-500",
+        coverArt: "./images/goodnight.jpg",
+        audioUrl: "./audio/good-night.mp3"
+
       },
       {
         id: 3,
@@ -41,13 +42,13 @@ export const tracksData=[
       },
       {
         id: 5,
-        name: "Good-Night",
-        artist: "Wave Collective",
+        name: "Ghostrifter",
+        artist: "Chill Beats",
         volume: 50,
         isPlaying: false,
-        color: "bg-pink-500",
-        coverArt: "./images/goodnight.jpg",
-        audioUrl: "./audio/good-night.mp3"
+        color: "bg-blue-500",
+        coverArt: "./images/ghostrifter.jpg",
+        audioUrl: "./audio/Ghostrifter.mp3"
       },
       {
         id: 6,

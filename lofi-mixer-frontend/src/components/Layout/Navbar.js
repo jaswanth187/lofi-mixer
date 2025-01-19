@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Home, Coffee, Moon } from 'lucide-react';
 import axios from 'axios';
-
+import { Link } from 'react-router-dom';
 const Navbar = () => {
   const { user, login, logout } = useAuth();
   const navigate = useNavigate();
@@ -66,6 +66,12 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <Home className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
             <Coffee className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+            <Link to="/upload" className="text-white/80 hover:text-white">
+    Upload
+  </Link>
+  <Link to="/my-tracks" className="text-white/80 hover:text-white">
+    My Tracks
+  </Link>
           </div>
           <div className="text-xl font-bold text-white/90">Lofi Mixer</div>
           <div className="flex items-center space-x-4 relative">
