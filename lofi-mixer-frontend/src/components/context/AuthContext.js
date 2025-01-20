@@ -4,12 +4,14 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);  // Add loading state
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    setLoading(false);  // Set loading to false after checking storage
   }, []);
 
   const login = (userData) => {
@@ -18,11 +20,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // Clear React state
     setUser(null);
-    
-    // Clear localStorage
-    localStorage.clear(); // Clear all localStorage instead of just user
+    localStorage.clear();
     
     // Clear all cookies
     const cookies = document.cookie.split(';');
@@ -36,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

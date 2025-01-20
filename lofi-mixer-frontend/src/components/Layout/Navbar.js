@@ -1,29 +1,31 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, Upload, Music, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Home, Coffee, Moon } from 'lucide-react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+
 const Navbar = () => {
+  const [showDropdown, setShowDropdown] = useState(false);
   const { user, login, logout } = useAuth();
   const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Handle initial auth from URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const userParam = urlParams.get('user');
     if (userParam) {
       const userData = JSON.parse(decodeURIComponent(userParam));
       login(userData);
-      navigate('/'); // Remove query params from URL
+      navigate('/');
     }
   }, [login, navigate]);
 
+  // Handle clicking outside dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
+        setShowDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -32,76 +34,72 @@ const Navbar = () => {
     };
   }, []);
 
+  // Enhanced logout handler
   const handleLogout = async () => {
     try {
-      // First call the backend logout endpoint
       await axios.get('http://localhost:3000/auth/logout', { 
         withCredentials: true 
       });
-      
-      // Then clear frontend state and storage
       await logout();
-      
-      // Finally navigate
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
-  const getInitials = (name) => {
-    if (!name) return '';
-    const names = name.split(' ');
-    return names.map(n => n[0]).join('');
-  };
-
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/10 border-b border-white/20">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <Home className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-            <Coffee className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
-            <Link to="/upload" className="text-white/80 hover:text-white">
-    Upload
-  </Link>
-  <Link to="/my-tracks" className="text-white/80 hover:text-white">
-    My Tracks
-  </Link>
-          </div>
-          <div className="text-xl font-bold text-white/90">Lofi Mixer</div>
-          <div className="flex items-center space-x-4 relative">
-            <Moon className="w-6 h-6 text-white/80 hover:text-white cursor-pointer" />
+          <Link to="/" className="text-2xl font-bold text-white">
+            Lofi Mixer
+          </Link>
+
+          <div className="flex items-center space-x-6">
+            <Link to="/" className="text-white/80 hover:text-white transition-colors duration-200">
+              <Home className="w-5 h-5" />
+            </Link>
+
             {user && (
+              <>
+                <Link to="/upload" className="text-white/80 hover:text-white transition-colors duration-200">
+                  <Upload className="w-5 h-5" />
+                </Link>
+                <Link to="/my-tracks" className="text-white/80 hover:text-white transition-colors duration-200">
+                  <Music className="w-5 h-5" />
+                </Link>
+              </>
+            )}
+
+            {user ? (
               <div className="relative" ref={dropdownRef}>
-                <div 
-                  className="w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center cursor-pointer"
-                  onClick={toggleDropdown}
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center text-white/80 hover:text-white transition-colors duration-200"
                 >
-                  <span className="text-center">{getInitials(user.username)}</span>
-                </div>
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 text-white rounded-md shadow-lg py-1 z-50">
-                    <div className="px-4 py-2 text-sm">{user.username}</div>
-                    <div className="border-t border-gray-700"></div>
-                    <button 
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-700"
-                    >
-                      Logout
-                    </button>
+                  <UserCircle className="w-6 h-6" />
+                </button>
+                
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-gray-900/95 backdrop-blur-lg ring-1 ring-white/10">
+                    <div className="py-1">
+                      <div className="px-4 py-2 text-sm text-white/90 border-b border-white/10">
+                        {user.username}
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200"
+                      >
+                        Logout
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-            {!user && (
+            ) : (
               <button 
                 onClick={() => navigate('/login')}
-                className="text-white/80 hover:text-white cursor-pointer"
+                className="text-white/80 hover:text-white transition-colors duration-200"
               >
                 Login
               </button>

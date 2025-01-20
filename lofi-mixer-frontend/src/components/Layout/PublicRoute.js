@@ -1,14 +1,19 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const PublicRoute = ({ children }) => {
-  const { user } = useAuth();
+export default function PublicRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (user) {
-    return <Navigate to="/" />;
+    // Redirect to the page they tried to visit or home
+    const from = location.state?.from?.pathname || '/';
+    return <Navigate to={from} replace />;
   }
 
   return children;
-};
-
-export default PublicRoute;
+}

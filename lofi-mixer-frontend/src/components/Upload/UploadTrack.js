@@ -65,6 +65,7 @@ const UploadTrack = () => {
   }
 
   return (
+    <div className="pt-20 min-h-screen">
     <div className="max-w-md mx-auto mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-xl">
       <h2 className="text-2xl font-bold text-white mb-6">Upload Track</h2>
       {error && (
@@ -108,6 +109,7 @@ const UploadTrack = () => {
           {loading ? 'Uploading...' : 'Upload Track'}
         </button>
       </form>
+    </div>
     </div>
   );
 };
