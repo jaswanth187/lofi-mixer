@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LofiMixer from './components/LofiMixer/LofiMixer';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
+import GoogleAuthSuccess from './components/Auth/GoogleAuthSuccess';
 import { AuthProvider } from './components/context/AuthContext';
 import PublicRoute from './components/Layout/PublicRoute';
 import ProtectedRoute from './components/Layout/ProtectedRoute';
@@ -30,6 +31,14 @@ function App() {
               element={
                 <PublicRoute>
                   <Register />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/auth/google/success"
+              element={
+                <PublicRoute>
+                  <GoogleAuthSuccess />
                 </PublicRoute>
               }
             />

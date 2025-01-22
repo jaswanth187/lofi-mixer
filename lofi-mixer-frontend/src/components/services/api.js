@@ -7,6 +7,7 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -16,6 +17,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 export const loginUser = async (credentials) => {
   const response = await api.post('/auth/login', credentials, {
     withCredentials: true
@@ -29,5 +31,28 @@ export const registerUser = async (userData) => {
 };
 
 export const googleAuth = () => {
+  // Using absolute URL for backend
   window.location.href = 'http://localhost:3000/auth/google';
+};
+
+export const checkAuthStatus = async () => {
+  try {
+    const response = await api.get('/auth/me', {
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const response = await api.get('/auth/logout', {
+      withCredentials: true
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
 };

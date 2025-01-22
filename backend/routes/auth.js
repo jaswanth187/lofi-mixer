@@ -6,10 +6,31 @@ const router = express.Router();
 
 // Google OAuth Routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
-  // Send user data to frontend
-  res.redirect(`http://localhost:3001?user=${encodeURIComponent(JSON.stringify(req.user))}`);
+// In auth.routes.js
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    // Using absolute URL for frontend
+    res.redirect('http://localhost:3001/auth/google/success');
+  }
+);
+router.get('/me', (req, res) => {
+  if (req.user) {
+    res.json({
+      user: {
+        id: req.user._id,
+        username: req.user.username,
+        email: req.user.email,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        profilePicture: req.user.profilePicture
+      }
+    });
+  } else {
+    res.status(401).json({ message: 'Not authenticated' });
+  }
 });
+
 
 // Manual Login Routes\
 

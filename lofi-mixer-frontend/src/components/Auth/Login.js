@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { loginUser } from '../services/api';
+import { loginUser, googleAuth } from '../services/api';
 import styles from './Auth.module.css';
 
 export default function Login() {
@@ -9,12 +9,17 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const handleGoogleLogin = (e) => {
+    e.preventDefault();
+    googleAuth();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const data = await loginUser(credentials);
       login(data.user);
-      navigate('/'); // Redirect to root path after successful login
+      navigate('/');
     } catch (error) {
       console.error('Login failed:', error);
     }
@@ -40,8 +45,9 @@ export default function Login() {
           Login
         </button>
         <button 
-          onClick={() => window.location.href = 'http://localhost:3000/auth/google'}
+          onClick={handleGoogleLogin}
           className={styles.googleButton}
+          type="button"
         >
           Login with Google
         </button>
