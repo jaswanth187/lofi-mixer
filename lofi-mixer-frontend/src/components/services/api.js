@@ -19,10 +19,12 @@ api.interceptors.response.use(
 );
 
 export const loginUser = async (credentials) => {
-  const response = await api.post('/auth/login', credentials, {
-    withCredentials: true
-  });
-  return response.data;
+  try {
+    const response = await api.post('/auth/login', credentials);
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
 };
 
 export const registerUser = async (userData) => {
@@ -54,5 +56,18 @@ export const logoutUser = async () => {
     return response.data;
   } catch (error) {
     throw error;
+  }
+};
+
+export const handleApiError = (error) => {
+  if (error.response) {
+    // Server responded with error
+    return error.response.data.message || 'An error occurred';
+  } else if (error.request) {
+    // Request made but no response
+    return 'No response from server. Please try again later.';
+  } else {
+    // Request setup error
+    return 'Error setting up request. Please try again.';
   }
 };

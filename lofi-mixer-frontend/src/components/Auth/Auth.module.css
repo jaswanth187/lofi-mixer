@@ -21,3 +21,11 @@
   .googleButton {
     @apply w-full py-3 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors mt-4;
   }
+  .authLink {
+    @apply mt-6 text-center text-sm text-white/70;
+  }
+  
+  .link {
+    @apply text-emerald-500 hover:text-emerald-400 font-medium transition-colors ml-1;
+  }
+  

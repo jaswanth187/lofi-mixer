@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import styles from './Auth.module.css';
-
+import { Link } from 'react-router-dom';
 export default function Register() {
   const [userData, setUserData] = useState({
     username: '',
@@ -46,12 +46,18 @@ export default function Register() {
         <button type="submit" className={styles.authButton}>
           Register
         </button>
-        <button 
+        <p className={styles.authLink}>
+          Already have an account?{' '}
+          <Link to="/login" className={styles.link}>
+            Login here
+          </Link>
+        </p>
+        {/* <button 
           onClick={() => window.location.href = 'http://localhost:3000/auth/google'}
           className={styles.googleButton}
         >
           Register with Google
-        </button>
+        </button> */}
       </form>
     </div>
   );

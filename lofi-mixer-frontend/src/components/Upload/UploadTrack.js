@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import {api} from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
+import { api } from '../services/api';
+
 const UploadTrack = () => {
   const [file, setFile] = useState(null);
-  const [trackInfo, setTrackInfo] = useState({
-    name: '',
-    artist: '',
-    coverArt: ''
-  });
+  const [trackInfo, setTrackInfo] = useState({ name: '', artist: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -19,39 +17,56 @@ const UploadTrack = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-  
-    if (!file) {
-      setError('Please select an audio file');
-      setLoading(false);
-      return;
-    }
-  
+    setUploadProgress(0);
+
     try {
+      if (!file) {
+        throw new Error('Please select an audio file');
+      }
+
+      // Validate input fields
+      if (!trackInfo.name.trim() || !trackInfo.artist.trim()) {
+        throw new Error('Track name and artist are required');
+      }
+
+      // Validate file type
+      const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Invalid file type. Only MP3 and WAV files are allowed');
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error(`File size (${(file.size/1024/1024).toFixed(2)}MB) exceeds 10MB limit`);
+      }
+
       const formData = new FormData();
       formData.append('audio', file);
-      formData.append('name', trackInfo.name);
-      formData.append('artist', trackInfo.artist);
-      formData.append('coverArt', trackInfo.coverArt || './images/default-cover.jpg');
-  
-      console.log('Uploading file:', file.name);
-      
+      formData.append('name', trackInfo.name.trim());
+      formData.append('artist', trackInfo.artist.trim());
+
       const response = await api.post('/upload/track', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true,
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
         },
-        withCredentials: true
+        timeout: 30000 // 30 second timeout
       });
-  
-      console.log('Upload response:', response.data);
-      
+
       if (response.status === 201) {
+        toast.success('Track uploaded successfully');
         navigate('/my-tracks');
       }
     } catch (error) {
-      console.error('Upload failed:', error.response?.data || error);
-      setError(error.response?.data?.message || 'Upload failed. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Upload failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error('Upload error:', error);
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 

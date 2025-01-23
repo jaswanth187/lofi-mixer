@@ -9,11 +9,12 @@ import ProtectedRoute from './components/Layout/ProtectedRoute';
 import UploadTrack from './components/Upload/UploadTrack';
 import UserTracks from './components/Tracks/UserTracks';
 import Navbar from './components/Layout/Navbar';
-
+import { Toaster } from 'react-hot-toast';
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+      <Toaster position="top-right" />
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
           <Navbar />
           <Routes>

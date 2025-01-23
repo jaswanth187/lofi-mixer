@@ -103,19 +103,37 @@ router.get('/tracks', ensureAuthenticated, async (req, res) => {
 // Update the track upload endpoint
 router.post('/track', ensureAuthenticated, (req, res) => {
   upload.single('audio')(req, res, async (err) => {
-    if (err) {
-      console.error('Upload error:', err);
-      return res.status(400).json({ message: 'Error uploading file' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
+    let uploadedFile = null;
     try {
+      // Handle multer errors
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          throw new Error('File size exceeds 10MB limit');
+        }
+        throw new Error(err.message || 'Error uploading file');
+      }
+
+      // Validate request
+      if (!req.file) {
+        throw new Error('No audio file uploaded');
+      }
+
+      // Validate file type
+      const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        throw new Error('Invalid file type. Only MP3 and WAV files are allowed');
+      }
+
+      uploadedFile = req.file;
+
+      // Validate metadata
+      if (!req.body.name?.trim() || !req.body.artist?.trim()) {
+        throw new Error('Track name and artist are required');
+      }
+
       const newTrack = new Track({
-        name: req.body.name || 'Untitled',
-        artist: req.body.artist || 'Unknown Artist',
+        name: req.body.name.trim(),
+        artist: req.body.artist.trim(),
         uploadedBy: req.user._id,
         filename: req.file.filename,
         fileId: req.file.id,
@@ -125,22 +143,26 @@ router.post('/track', ensureAuthenticated, (req, res) => {
       const savedTrack = await newTrack.save();
       
       res.status(201).json({
+        status: 'success',
         message: 'Track uploaded successfully',
-        track: {
-          ...savedTrack.toObject(),
-          audioUrl: `${process.env.BACKEND_URL || 'http://localhost:3000'}/upload/track/${savedTrack.filename}`
-        }
+        track: savedTrack
       });
+
     } catch (error) {
-      console.error('Save error:', error);
-      if (req.file && req.file.id) {
+      // Clean up uploaded file if save fails
+      if (uploadedFile?.id) {
         try {
-          await gridfsBucket.delete(new mongoose.Types.ObjectId(req.file.id));
+          await gridfsBucket.delete(uploadedFile.id);
         } catch (deleteError) {
-          console.error('Cleanup error:', deleteError);
+          console.error('File cleanup error:', deleteError);
         }
       }
-      res.status(500).json({ message: 'Error saving track information' });
+
+      console.error('Upload error:', error);
+      res.status(error.statusCode || 400).json({
+        status: 'error',
+        message: error.message || 'Upload failed'
+      });
     }
   });
 });

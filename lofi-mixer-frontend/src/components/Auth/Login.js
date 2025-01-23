@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, googleAuth } from '../services/api';
 import styles from './Auth.module.css';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -51,6 +52,12 @@ export default function Login() {
         >
           Login with Google
         </button>
+        <p className={styles.authLink}>
+          Don't have an account?{' '}
+          <Link to="/register" className={styles.link}>
+            Register here
+          </Link>
+        </p>
       </form>
     </div>
   );

@@ -3,7 +3,7 @@ const passport = require('passport');
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const router = express.Router();
-
+const { AppError } = require('../middleware/errorHandler');
 // Google OAuth Routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 // In auth.routes.js
@@ -100,20 +100,33 @@ router.get('/logout', async (req, res) => {
 
 
 // POST route for registration
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res,next) => {
+
   try {
     const { username, password, email } = req.body;
-    
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ username }, { email }] 
-    });
-    
-    if (existingUser) {
-      return res.status(400).json({ 
-        message: 'Username or email already exists' 
-      });
+      if (!username || !password || !email) {
+      throw new AppError('Please provide username, password and email', 400);
     }
+
+    if (password.length < 6) {
+      throw new AppError('Password must be at least 6 characters long', 400);
+    }
+
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser) {
+      throw new AppError('Username or email already exists', 400);
+    }
+
+    // Check if user already exists
+    // const existingUser = await User.findOne({ 
+    //   $or: [{ username }, { email }] 
+    // });
+    
+    // if (existingUser) {
+    //   return res.status(400).json({ 
+    //     message: 'Username or email already exists' 
+    //   });
+    // }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -130,10 +143,7 @@ router.post('/register', async (req, res) => {
       message: 'User registered successfully' 
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ 
-      message: 'Error registering user' 
-    });
+   next(error);
   }
 });
 
