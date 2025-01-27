@@ -8,3 +8,11 @@ next features:
 what are we using:
 
     Multer(uploading the songs) and GridFs (storing songs in mongodb)
+
+
+Improvements:
+    1, Error Handling
+    2, Security(Enviroment Variables, Input Validation, CSRF Protection)
+    3, Performance(Caching, Lazy Loading)
+    4, User Experience(Loading States, Error Messages)
+    

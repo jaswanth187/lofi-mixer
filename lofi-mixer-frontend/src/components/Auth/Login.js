@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { loginUser, googleAuth } from '../services/api';
 import styles from './Auth.module.css';
 import { Link } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -17,12 +18,24 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Client-side validation
+    if (!credentials.username || !credentials.password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
     try {
       const data = await loginUser(credentials);
       login(data.user);
+      toast.success('Login successful!');
       navigate('/');
     } catch (error) {
-      console.error('Login failed:', error);
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('An error occurred. Please try again.');
+      }
     }
   };
 
@@ -34,18 +47,18 @@ export default function Login() {
           type="text"
           placeholder="Username"
           className={styles.authInput}
-          onChange={(e) => setCredentials({...credentials, username: e.target.value})}
+          onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
         />
         <input
           type="password"
           placeholder="Password"
           className={styles.authInput}
-          onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+          onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
         />
         <button type="submit" className={styles.authButton}>
           Login
         </button>
-        <button 
+        <button
           onClick={handleGoogleLogin}
           className={styles.googleButton}
           type="button"
@@ -59,6 +72,7 @@ export default function Login() {
           </Link>
         </p>
       </form>
+      <Toaster position="top-right" />
     </div>
   );
 }

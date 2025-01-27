@@ -34,34 +34,27 @@ router.get('/me', (req, res) => {
 
 // Manual Login Routes\
 
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      return res.status(500).json({ message: 'Internal server error' });
-    }
-    
+router.post('/login', async (req, res, next) => {
+  const { username, password } = req.body;
+
+  try {
+    const user = await User.findOne({ username });
+
     if (!user) {
-      return res.status(401).json({ message: info.message || 'Invalid credentials' });
+      return next(new AppError('User not found', 404));
     }
 
-    req.logIn(user, (err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error logging in' });
-      }
-      
-      // Set session
-      req.session.user = user;
-      
-      return res.status(200).json({
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email
-        }
-      });
-    });
-  })(req, res, next);
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return next(new AppError('Invalid credentials', 401));
+    }
+
+    // Generate and send JWT token or session
+    res.status(200).json({ user });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Logout Route
@@ -99,39 +92,17 @@ router.get('/logout', async (req, res) => {
 });
 
 
-// POST route for registration
-router.post('/register', async (req, res,next) => {
+router.post('/register', async (req, res, next) => {
+  const { username, password, email } = req.body;
 
   try {
-    const { username, password, email } = req.body;
-      if (!username || !password || !email) {
-      throw new AppError('Please provide username, password and email', 400);
-    }
+    const existingUser = await User.findOne({ email });
 
-    if (password.length < 6) {
-      throw new AppError('Password must be at least 6 characters long', 400);
-    }
-
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-      throw new AppError('Username or email already exists', 400);
+      return next(new AppError('Email already in use', 400));
     }
 
-    // Check if user already exists
-    // const existingUser = await User.findOne({ 
-    //   $or: [{ username }, { email }] 
-    // });
-    
-    // if (existingUser) {
-    //   return res.status(400).json({ 
-    //     message: 'Username or email already exists' 
-    //   });
-    // }
-
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Create new user
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -139,11 +110,9 @@ router.post('/register', async (req, res,next) => {
     });
 
     await newUser.save();
-    res.status(201).json({ 
-      message: 'User registered successfully' 
-    });
-  } catch (error) {
-   next(error);
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (err) {
+    next(err);
   }
 });
 

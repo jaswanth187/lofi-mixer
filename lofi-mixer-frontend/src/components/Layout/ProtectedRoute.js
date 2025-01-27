@@ -5,13 +5,14 @@ export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Show loading state or spinner while checking authentication
+  console.log('Protected Route Check:', { user, loading, path: location.pathname });
+
   if (loading) {
     return <div>Loading...</div>;
   }
 
   if (!user) {
-    // Save the attempted URL
+    console.log('No user found, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

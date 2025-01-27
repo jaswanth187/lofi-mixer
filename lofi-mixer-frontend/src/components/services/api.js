@@ -44,6 +44,7 @@ export const checkAuthStatus = async () => {
     });
     return response.data;
   } catch (error) {
+    console.error('Auth check error:', error);
     throw error;
   }
 };
@@ -67,7 +68,6 @@ export const handleApiError = (error) => {
     // Request made but no response
     return 'No response from server. Please try again later.';
   } else {
-    // Request setup error
     return 'Error setting up request. Please try again.';
   }
 };
