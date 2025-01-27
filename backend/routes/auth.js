@@ -32,36 +32,63 @@ router.get('/me', (req, res) => {
 });
 
 
-// Manual Login Routes\
+// Manual Login Routes
+router.post('/login', async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
 
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      return res.status(500).json({ message: 'Internal server error' });
+    // Input validation
+    if (!username || !password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Username and password are required'
+      });
     }
-    
+
+    // Find user
+    const user = await User.findOne({ username });
     if (!user) {
-      return res.status(401).json({ message: info.message || 'Invalid credentials' });
+      return res.status(400).json({  // Changed from 401 to 400
+        status: 'error',
+        message: 'Invalid username or password'
+      });
     }
 
-    req.logIn(user, (err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error logging in' });
-      }
-      
-      // Set session
-      req.session.user = user;
-      
-      return res.status(200).json({
-        message: 'Login successful',
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email
-        }
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({  // Changed from 401 to 400
+        status: 'error',
+        message: 'Invalid username or password'
+      });
+    }
+
+    // Login user using a Promise wrapper
+    await new Promise((resolve, reject) => {
+      req.login(user, (err) => {
+        if (err) reject(err);
+        else resolve();
       });
     });
-  })(req, res, next);
+
+    // Send success response
+    return res.status(200).json({
+      status: 'success',
+      message: 'Login successful',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Internal server error'
+    });
+  }
 });
 
 // Logout Route
@@ -100,50 +127,76 @@ router.get('/logout', async (req, res) => {
 
 
 // POST route for registration
-router.post('/register', async (req, res,next) => {
-
+router.post('/register', async (req, res, next) => {
   try {
     const { username, password, email } = req.body;
-      if (!username || !password || !email) {
+
+    // Enhanced validation
+    if (!username || !password || !email) {
       throw new AppError('Please provide username, password and email', 400);
     }
 
+    // Username validation
+    if (username.length < 3) {
+      throw new AppError('Username must be at least 3 characters long', 400);
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError('Please provide a valid email address', 400);
+    }
+
+    // Password validation
     if (password.length < 6) {
       throw new AppError('Password must be at least 6 characters long', 400);
     }
-
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-    if (existingUser) {
-      throw new AppError('Username or email already exists', 400);
+    
+    if (!/(?=.*[0-9])/.test(password)) {
+      throw new AppError('Password must contain at least one number', 400);
     }
 
-    // Check if user already exists
-    // const existingUser = await User.findOne({ 
-    //   $or: [{ username }, { email }] 
-    // });
-    
-    // if (existingUser) {
-    //   return res.status(400).json({ 
-    //     message: 'Username or email already exists' 
-    //   });
-    // }
+    // Check for existing user
+    const existingUser = await User.findOne({ 
+      $or: [
+        { username: { $regex: new RegExp(`^${username}$`, 'i') } }, // Case-insensitive username check
+        { email: { $regex: new RegExp(`^${email}$`, 'i') } }  // Case-insensitive email check
+      ] 
+    });
+
+    if (existingUser) {
+      throw new AppError(
+        existingUser.username.toLowerCase() === username.toLowerCase() 
+          ? 'Username already exists' 
+          : 'Email already exists',
+        400
+      );
+    }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12); // Increased from 10 to 12 rounds
     
     // Create new user
     const newUser = new User({
-      username,
+      username: username.trim(),
       password: hashedPassword,
-      email
+      email: email.toLowerCase().trim(),
+      created: Date.now()
     });
 
     await newUser.save();
+
+    // Remove password from response
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
     res.status(201).json({ 
-      message: 'User registered successfully' 
+      status: 'success',
+      message: 'Registration successful',
+      user: userResponse
     });
   } catch (error) {
-   next(error);
+    next(error);
   }
 });
 
