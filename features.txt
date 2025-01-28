@@ -3,8 +3,57 @@ next features:
     1, uploading songs.
     2. removing lyrics.
 
-
+Performance
+Caching: Implement caching mechanisms for frequently accessed data to improve performance.
+Lazy Loading: Use lazy loading for components and assets to reduce initial load times.
 
 what are we using:
 
     Multer(uploading the songs) and GridFs (storing songs in mongodb)
+
+
+Security Enhancements:
+
+
+Added rate limiting for login/register attempts
+Implemented security headers with helmet
+Added protection against NoSQL injection
+Added XSS protection
+Added parameter pollution prevention
+Enhanced password hashing with increased salt rounds
+Improved session security configuration
+Added account locking after failed attempts
+
+
+Authentication Improvements:
+
+
+Added support for email/username login
+Enhanced Google OAuth implementation
+Added account linking capability
+Improved password reset functionality
+Added email verification support
+Added refresh token support
+Better error handling and validation
+
+
+User Model Improvements:
+
+
+Added tracking for login attempts and account locking
+Added email verification status
+Added password reset capabilities
+Added refresh token support
+Better field selection control
+Added timestamps
+Added active/inactive status
+
+
+Session Management:
+
+
+More secure session configuration
+Better session store setup
+Improved cookie security
+Added domain configuration
+
