@@ -23,20 +23,16 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'http://localhost:3000/auth/google/callback',
+  callbackURL: process.env.GOOGLE_CALLBACK_URL,
   userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo',
-  prompt: 'select_account'
-}, async (accessToken, refreshToken, profile, done) => {
+  passReqToCallback: true
+}, async (req, accessToken, refreshToken, profile, done) => {
   try {
     let existingUser = await User.findOne({ googleId: profile.id });
     
     if (existingUser) {
-      // Update existing user's information
-      existingUser.username = profile.displayName;
-      existingUser.email = profile.emails[0].value;
-      existingUser.firstName = profile.name?.givenName;
-      existingUser.lastName = profile.name?.familyName;
-      existingUser.profilePicture = profile.photos?.[0]?.value;
+      // Update user info
+      existingUser.lastLogin = new Date();
       await existingUser.save();
       return done(null, existingUser);
     }
@@ -49,13 +45,14 @@ passport.use(new GoogleStrategy({
       firstName: profile.name?.givenName,
       lastName: profile.name?.familyName,
       profilePicture: profile.photos?.[0]?.value,
-      provider: 'google'
+      provider: 'google',
+      lastLogin: new Date()
     });
     
     await newUser.save();
-    done(null, newUser);
+    return done(null, newUser);
   } catch (error) {
-    done(error, null);
+    return done(error, null);
   }
 }));
 

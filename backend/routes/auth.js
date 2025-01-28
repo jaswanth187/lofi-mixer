@@ -4,16 +4,28 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const router = express.Router();
 const { AppError } = require('../middleware/errorHandler');
-// Google OAuth Routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-// In auth.routes.js
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  (req, res) => {
-    // Using absolute URL for frontend
-    res.redirect('http://localhost:3001/auth/google/success');
+
+
+router.get('/google',
+  (req, res, next) => {
+    console.log('Starting Google OAuth'); // Debug log
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'],
+      prompt: 'select_account'
+    })(req, res, next);
   }
 );
+
+router.get('/google/callback',
+  (req, res, next) => {
+    passport.authenticate('google', {
+      failureRedirect: `${process.env.FRONTEND_URL}/login`,
+      successRedirect: `${process.env.FRONTEND_URL}/auth/google/success`,
+      failureMessage: true
+    })(req, res, next);
+  }
+);
+
 router.get('/me', (req, res) => {
   if (req.user) {
     res.json({

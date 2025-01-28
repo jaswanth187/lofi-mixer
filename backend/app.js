@@ -25,17 +25,21 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  throw new Error('SESSION_SECRET is required in environment variables');
+}
+
 app.use(session({
-  secret: 'your_secret_key',
-  resave: true,
-  saveUninitialized: true,
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: 'mongodb://127.0.0.1:27017/lofi',
     collectionName: 'sessions',
-    ttl: 24 * 60 * 60
   }),
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: 'lax'

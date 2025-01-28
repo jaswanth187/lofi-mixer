@@ -14,27 +14,26 @@ what are we using:
 
 Security Enhancements:
 
-
-Added rate limiting for login/register attempts
-Implemented security headers with helmet
-Added protection against NoSQL injection
-Added XSS protection
-Added parameter pollution prevention
-Enhanced password hashing with increased salt rounds
-Improved session security configuration
-Added account locking after failed attempts
+    Added rate limiting for login/register attempts
+    Implemented security headers with helmet
+    Added protection against NoSQL injection
+    Added XSS protection
+    Added parameter pollution prevention
+    Enhanced password hashing with increased salt rounds
+    Improved session security configuration
+    Added account locking after failed attempts
 
 
 Authentication Improvements:
 
 
-Added support for email/username login
-Enhanced Google OAuth implementation
-Added account linking capability
-Improved password reset functionality
-Added email verification support
-Added refresh token support
-Better error handling and validation
+    Added support for email/username login
+    Enhanced Google OAuth implementation
+    Added account linking capability
+    Improved password reset functionality
+    Added email verification support
+    Added refresh token support
+    Better error handling and validation
 
 
 User Model Improvements:
