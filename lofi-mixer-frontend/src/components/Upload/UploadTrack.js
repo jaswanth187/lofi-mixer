@@ -3,10 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { api } from '../services/api';
+import { Music, Upload, AlertCircle } from 'lucide-react';
+
+const ErrorAlert = ({ message }) => (
+  <div className="flex items-center gap-2 p-4 mb-6 rounded-lg bg-red-500/10 border border-red-500/50 text-red-400">
+    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+    <p>{message}</p>
+  </div>
+);
 
 const UploadTrack = () => {
   const [file, setFile] = useState(null);
-  const [trackInfo, setTrackInfo] = useState({ name: '', artist: '' });
+  const [trackInfo, setTrackInfo] = useState({ name: '', artist: '', coverArt: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -73,58 +81,112 @@ const UploadTrack = () => {
 
   if (!user) {
     return (
-      <div className="max-w-md mx-auto mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-xl">
-        <p className="text-white text-center">Please login to upload tracks</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <div className="w-full max-w-md mx-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
+          <div className="text-center space-y-4">
+            <Music className="w-12 h-12 text-emerald-500 mx-auto" />
+            <p className="text-white/80">Please login to upload tracks</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="pt-20 min-h-screen">
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white/5 backdrop-blur-sm rounded-xl">
-      <h2 className="text-2xl font-bold text-white mb-6">Upload Track</h2>
-      {error && (
-        <div className="mb-4 p-2 bg-red-500/10 border border-red-500 rounded text-red-500">
-          {error}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-20 px-4">
+      <div className="max-w-xl mx-auto">
+        <div className="rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-white/10">
+            <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
+              <Upload className="w-6 h-6 text-emerald-500" />
+              Upload Your Track
+            </h2>
+          </div>
+
+          <div className="p-6">
+            {error && <ErrorAlert message={error} />}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Track Name"
+                    onChange={(e) => setTrackInfo({...trackInfo, name: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/50 
+                             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                    required
+                  />
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Artist Name"
+                    onChange={(e) => setTrackInfo({...trackInfo, artist: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/50 
+                             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                    required
+                  />
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Cover Art URL (optional)"
+                    onChange={(e) => setTrackInfo({...trackInfo, coverArt: e.target.value})}
+                    className="w-full p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/50 
+                             focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="relative">
+                  <label className="block w-full cursor-pointer">
+                    <div className="p-8 rounded-lg border-2 border-dashed border-white/20 bg-white/5 hover:bg-white/10 transition-all">
+                      <div className="text-center">
+                        <Music className="mx-auto h-12 w-12 text-emerald-500/80" />
+                        <div className="mt-4 flex text-sm leading-6 text-white/70 justify-center">
+                          <span className="relative rounded-md font-semibold text-emerald-400 focus-within:outline-none focus-within:ring-2">
+                            <span>Upload a file</span>
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={(e) => setFile(e.target.files[0])}
+                              className="sr-only"
+                              required
+                            />
+                          </span>
+                          <p className="pl-1">or drag and drop</p>
+                        </div>
+                        <p className="text-xs text-white/50 mt-2">MP3 or WAV up to 10MB</p>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {uploadProgress > 0 && (
+                <div className="w-full bg-white/10 rounded-full h-2">
+                  <div
+                    className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full p-3 rounded-lg bg-emerald-500 text-white font-medium
+                         hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500/20
+                         disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {loading ? 'Uploading...' : 'Upload Track'}
+              </button>
+            </form>
+          </div>
         </div>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Track Name"
-          onChange={(e) => setTrackInfo({...trackInfo, name: e.target.value})}
-          className="w-full p-2 rounded bg-white/10 text-white"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Artist Name"
-          onChange={(e) => setTrackInfo({...trackInfo, artist: e.target.value})}
-          className="w-full p-2 rounded bg-white/10 text-white"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Cover Art URL (optional)"
-          onChange={(e) => setTrackInfo({...trackInfo, coverArt: e.target.value})}
-          className="w-full p-2 rounded bg-white/10 text-white"
-        />
-        <input
-          type="file"
-          accept="audio/*"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="w-full p-2 rounded bg-white/10 text-white"
-          required
-        />
-        <button 
-          type="submit"
-          disabled={loading}
-          className="w-full p-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 disabled:opacity-50"
-        >
-          {loading ? 'Uploading...' : 'Upload Track'}
-        </button>
-      </form>
-    </div>
+      </div>
     </div>
   );
 };

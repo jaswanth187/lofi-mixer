@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, Play, Pause, Music } from 'lucide-react';
+import { Volume2, Play, Pause, Music, Clock } from 'lucide-react';
 import { Howl, Howler } from 'howler';
 import { api } from '../services/api';
 import Navbar from '../Layout/Navbar';
@@ -23,12 +23,95 @@ const VolumeSlider = ({ value, onChange }) => {
   );
 };
 
+const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
+  <div className="group relative rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 overflow-hidden
+                 transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl
+                 hover:shadow-emerald-500/10">
+    <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60" />
+    
+    <div className="relative h-48 overflow-hidden">
+    <img
+          src={track.coverImage} 
+          alt={track.name}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = DEFAULT_COVERS[0];
+          }}
+        />
+      
+      <button
+        onClick={() => onTogglePlay(track._id)}
+        className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 
+                 group-hover:opacity-100 transition-all duration-300"
+        disabled={isLoading}
+      >
+        <div className="p-4 rounded-full bg-emerald-500/80 hover:bg-emerald-600/80 
+                     transform transition-all duration-300 hover:scale-110 backdrop-blur-sm">
+          {isLoading ? (
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : track.isPlaying ? (
+            <Pause className="w-8 h-8 text-white" />
+          ) : (
+            <Play className="w-8 h-8 text-white" />
+          )}
+        </div>
+      </button>
+    </div>
+
+    <div className="relative p-6 space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-xl text-white mb-1 truncate">{track.name}</h3>
+          <p className="text-gray-400 text-sm flex items-center gap-2">
+            <Music className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{track.artist}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-gray-400">
+          <Clock className="w-4 h-4" />
+          <span className="text-sm">3:45</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Volume2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <VolumeSlider
+            value={track.volume}
+            onChange={(value) => onVolumeChange(track._id, value)}
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+const DEFAULT_COVERS = [
+  '/images/my-tracks/image1.jpg',
+  '/images/my-tracks/image2.jpg',
+  '/images/my-tracks/image3.jpg',
+  '/images/my-tracks/image4.jpg'
+];
+const coverAssignments = new Map();
+let nextCoverIndex = 0;
+
 const UserTracks = () => {
   const [tracks, setTracks] = useState([]);
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [loadingTrackId, setLoadingTrackId] = useState(null);
   const howlRefs = useRef({});
   const loadedTracks = useRef(new Set());
+
+
+  const getCoverForTrack = (trackId) => {
+    if (!coverAssignments.has(trackId)) {
+      const coverImage = DEFAULT_COVERS[nextCoverIndex];
+      coverAssignments.set(trackId, coverImage);
+      nextCoverIndex = (nextCoverIndex + 1) % DEFAULT_COVERS.length;
+    }
+    return coverAssignments.get(trackId);
+  };
 
   useEffect(() => {
     fetchUserTracks();
@@ -37,12 +120,20 @@ const UserTracks = () => {
   const fetchUserTracks = async () => {
     try {
       const response = await api.get('/upload/tracks', { withCredentials: true });
-      setTracks(response.data.map(track => ({
+      
+      // Reset cover assignments when fetching new tracks
+      coverAssignments.clear();
+      nextCoverIndex = 0;
+      
+      const tracksWithData = response.data.map(track => ({
         ...track,
         volume: 50,
         isPlaying: false,
-        audioUrl: `http://localhost:3000/upload/track/${track.filename}`
-      })));
+        audioUrl: `http://localhost:3000/upload/track/${track.filename}`,
+        coverImage: getCoverForTrack(track._id) // Assign cover here
+      }));
+      
+      setTracks(tracksWithData);
     } catch (error) {
       console.error('Error fetching tracks:', error);
     }
@@ -157,59 +248,21 @@ const UserTracks = () => {
       <div className="fixed inset-0 opacity-50">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(17,24,39,0.8),rgba(17,24,39,0.4))]" />
       </div>
-
+      
       <div className="relative z-10 max-w-7xl mx-auto px-4 pt-24 pb-12">
-        <h1 className="text-3xl font-bold text-white mb-8">Your Uploaded Tracks</h1>
+        <h1 className="text-4xl font-bold text-white mb-8">
+          Your Music Collection
+        </h1>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tracks.map(track => (
-            <div
+            <TrackCard
               key={track._id}
-              className="group relative bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden 
-                       transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl 
-                       border border-white/10"
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60" />
-              
-              <img
-                src={track.coverArt}
-                alt={track.name}
-                className="w-full h-48 object-cover"
-              />
-
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 
-                            group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => togglePlay(track._id)}
-                  className="p-4 rounded-full bg-emerald-500/80 hover:bg-emerald-600/80 
-                           transition-all duration-300 backdrop-blur-sm"
-                  disabled={loadingTrackId === track._id}
-                >
-                  {loadingTrackId === track._id ? (
-                    <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : track.isPlaying ? (
-                    <Pause className="w-8 h-8 text-white" />
-                  ) : (
-                    <Play className="w-8 h-8 text-white" />
-                  )}
-                </button>
-              </div>
-
-              <div className="p-4">
-                <h3 className="font-medium text-lg text-white mb-1">{track.name}</h3>
-                <p className="text-gray-400 text-sm flex items-center gap-2">
-                  <Music className="w-4 h-4" />
-                  {track.artist}
-                </p>
-
-                <div className="mt-4 flex items-center gap-3">
-                  <Volume2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <VolumeSlider
-                    value={track.volume}
-                    onChange={(value) => adjustVolume(track._id, value)}
-                  />
-                </div>
-              </div>
-            </div>
+              track={track}
+              onTogglePlay={togglePlay}
+              onVolumeChange={adjustVolume}
+              isLoading={loadingTrackId === track._id}
+            />
           ))}
         </div>
       </div>
