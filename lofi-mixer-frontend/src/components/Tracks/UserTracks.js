@@ -4,6 +4,13 @@ import { Howl, Howler } from 'howler';
 import { api } from '../services/api';
 import Navbar from '../Layout/Navbar';
 
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '--:--';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
 const VolumeSlider = ({ value, onChange }) => {
   return (
     <div className="relative group w-full">
@@ -30,15 +37,15 @@ const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
     <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60" />
     
     <div className="relative h-48 overflow-hidden">
-    <img
-          src={track.coverImage} 
-          alt={track.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = DEFAULT_COVERS[0];
-          }}
-        />
+      <img
+        src={track.coverImage} 
+        alt={track.name}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = DEFAULT_COVERS[0];
+        }}
+      />
       
       <button
         onClick={() => onTogglePlay(track._id)}
@@ -73,7 +80,9 @@ const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-gray-400">
           <Clock className="w-4 h-4" />
-          <span className="text-sm">3:45</span>
+          <span className="text-sm">
+            {formatTime(track.duration)}
+          </span>
         </div>
         
         <div className="flex items-center gap-3">
@@ -87,12 +96,14 @@ const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
     </div>
   </div>
 );
+
 const DEFAULT_COVERS = [
   '/images/my-tracks/image1.jpg',
   '/images/my-tracks/image2.jpg',
   '/images/my-tracks/image3.jpg',
   '/images/my-tracks/image4.jpg'
 ];
+
 const coverAssignments = new Map();
 let nextCoverIndex = 0;
 
@@ -102,7 +113,6 @@ const UserTracks = () => {
   const [loadingTrackId, setLoadingTrackId] = useState(null);
   const howlRefs = useRef({});
   const loadedTracks = useRef(new Set());
-
 
   const getCoverForTrack = (trackId) => {
     if (!coverAssignments.has(trackId)) {
@@ -121,7 +131,6 @@ const UserTracks = () => {
     try {
       const response = await api.get('/upload/tracks', { withCredentials: true });
       
-      // Reset cover assignments when fetching new tracks
       coverAssignments.clear();
       nextCoverIndex = 0;
       
@@ -129,11 +138,15 @@ const UserTracks = () => {
         ...track,
         volume: 50,
         isPlaying: false,
-        audioUrl: `http://localhost:3000/upload/track/${track.filename}`,
-        coverImage: getCoverForTrack(track._id) // Assign cover here
+        duration: null,  // Initialize duration as null
+        audioUrl: `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:3000'}/upload/track/${track.filename}`,
+        coverImage: getCoverForTrack(track._id)
       }));
       
       setTracks(tracksWithData);
+  
+      // Load duration for each track
+      tracksWithData.forEach(track => loadTrack(track));
     } catch (error) {
       console.error('Error fetching tracks:', error);
     }
@@ -141,17 +154,28 @@ const UserTracks = () => {
 
   const loadTrack = async (track) => {
     if (loadedTracks.current.has(track._id)) return;
-
+  
     setLoadingTrackId(track._id);
     
     return new Promise((resolve) => {
-      howlRefs.current[track._id] = new Howl({
+      const howl = new Howl({
         src: [track.audioUrl],
         html5: true,
-        loop: true,
-        volume: track.volume / 100,
-        onload: () => {
-          console.log(`Loaded track: ${track.name}`);
+        preload: true,
+        onload: function() {
+          // Get duration immediately when loaded
+          const duration = this.duration();
+          console.log(`Duration loaded for ${track.name}:`, duration);
+          
+          setTracks(prevTracks => 
+            prevTracks.map(t => 
+              t._id === track._id 
+                ? { ...t, duration: duration } 
+                : t
+            )
+          );
+  
+          howlRefs.current[track._id] = this;
           loadedTracks.current.add(track._id);
           setLoadingTrackId(null);
           resolve();
@@ -162,6 +186,9 @@ const UserTracks = () => {
           resolve();
         }
       });
+  
+      // Start loading the audio
+      howl.load();
     });
   };
 
