@@ -189,4 +189,38 @@ router.post('/track', ensureAuthenticated, async (req, res, next) => {
   }
 });
 
+// Add delete endpoint
+router.delete('/track/:id', ensureAuthenticated, async (req, res) => {
+  try {
+    const track = await Track.findOne({ 
+      _id: req.params.id, 
+      uploadedBy: req.user._id 
+    });
+
+    if (!track) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Track not found' 
+      });
+    }
+
+    // Delete file from GridFS
+    await gridfsBucket.delete(track.fileId);
+    
+    // Delete track document
+    await Track.deleteOne({ _id: req.params.id });
+
+    res.json({ 
+      status: 'success', 
+      message: 'Track deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Error deleting track' 
+    });
+  }
+});
+
 module.exports = router;

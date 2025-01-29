@@ -3,6 +3,8 @@ import { Volume2, Play, Pause, Music, Clock } from 'lucide-react';
 import { Howl, Howler } from 'howler';
 import { api } from '../services/api';
 import Navbar from '../Layout/Navbar';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '--:--';
@@ -30,7 +32,7 @@ const VolumeSlider = ({ value, onChange }) => {
   );
 };
 
-const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
+const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading,onDelete }) => (
   <div className="group relative rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 overflow-hidden
                  transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl
                  hover:shadow-emerald-500/10">
@@ -75,6 +77,13 @@ const TrackCard = ({ track, onTogglePlay, onVolumeChange, isLoading }) => (
             <span className="truncate">{track.artist}</span>
           </p>
         </div>
+        <button
+          onClick={() => onDelete(track._id)}
+          className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-red-500 transition-all"
+          title="Delete track"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
       </div>
 
       <div className="space-y-2">
@@ -114,6 +123,7 @@ const UserTracks = () => {
   const howlRefs = useRef({});
   const loadedTracks = useRef(new Set());
 
+  
   const getCoverForTrack = (trackId) => {
     if (!coverAssignments.has(trackId)) {
       const coverImage = DEFAULT_COVERS[nextCoverIndex];
@@ -269,6 +279,31 @@ const UserTracks = () => {
     };
   }, []);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this track?')) {
+      return;
+    }
+
+    try {
+      await api.delete(`/upload/track/${id}`, { withCredentials: true });
+      
+      // Update tracks state
+      setTracks(tracks.filter(track => track._id !== id));
+      
+      // Cleanup Howl instance
+      if (howlRefs.current[id]) {
+        howlRefs.current[id].unload();
+        delete howlRefs.current[id];
+      }
+      loadedTracks.current.delete(id);
+      
+      toast.success('Track deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Error deleting track');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Navbar />
@@ -288,6 +323,7 @@ const UserTracks = () => {
               track={track}
               onTogglePlay={togglePlay}
               onVolumeChange={adjustVolume}
+              onDelete={handleDelete}
               isLoading={loadingTrackId === track._id}
             />
           ))}
