@@ -101,70 +101,92 @@ router.get('/tracks', ensureAuthenticated, async (req, res) => {
 });
 
 // Update the track upload endpoint
-router.post('/track', ensureAuthenticated, (req, res) => {
-  upload.single('audio')(req, res, async (err) => {
-    let uploadedFile = null;
-    try {
-      // Handle multer errors
-      if (err) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          throw new Error('File size exceeds 10MB limit');
-        }
-        throw new Error(err.message || 'Error uploading file');
-      }
+const UPLOAD_LIMIT = 4;
+router.post('/track', ensureAuthenticated, async (req, res, next) => {
+  let uploadedFile = null;
 
-      // Validate request
-      if (!req.file) {
-        throw new Error('No audio file uploaded');
-      }
-
-      // Validate file type
-      const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
-      if (!allowedTypes.includes(req.file.mimetype)) {
-        throw new Error('Invalid file type. Only MP3 and WAV files are allowed');
-      }
-
-      uploadedFile = req.file;
-
-      // Validate metadata
-      if (!req.body.name?.trim() || !req.body.artist?.trim()) {
-        throw new Error('Track name and artist are required');
-      }
-
-      const newTrack = new Track({
-        name: req.body.name.trim(),
-        artist: req.body.artist.trim(),
-        uploadedBy: req.user._id,
-        filename: req.file.filename,
-        fileId: req.file.id,
-        coverArt: req.body.coverArt || '/default-cover.jpg'
-      });
-
-      const savedTrack = await newTrack.save();
-      
-      res.status(201).json({
-        status: 'success',
-        message: 'Track uploaded successfully',
-        track: savedTrack
-      });
-
-    } catch (error) {
-      // Clean up uploaded file if save fails
-      if (uploadedFile?.id) {
-        try {
-          await gridfsBucket.delete(uploadedFile.id);
-        } catch (deleteError) {
-          console.error('File cleanup error:', deleteError);
-        }
-      }
-
-      console.error('Upload error:', error);
-      res.status(error.statusCode || 400).json({
+  try {
+    // Check user's existing track count
+    const trackCount = await Track.countDocuments({ uploadedBy: req.user._id });
+    if (trackCount >= UPLOAD_LIMIT) {
+      return res.status(400).json({
         status: 'error',
-        message: error.message || 'Upload failed'
+        message: `Upload limit reached. Maximum ${UPLOAD_LIMIT} tracks allowed.`
       });
     }
-  });
+
+    // Wrap multer upload in a promise
+    const handleUpload = () => {
+      return new Promise((resolve, reject) => {
+        upload.single('audio')(req, res, (err) => {
+          if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+              reject(new Error('File size exceeds 10MB limit'));
+            } else {
+              reject(new Error(err.message || 'Error uploading file'));
+            }
+          }
+          resolve(req.file);
+        });
+      });
+    };
+
+    // Handle file upload
+    uploadedFile = await handleUpload();
+
+    // Validate file was uploaded
+    if (!uploadedFile) {
+      throw new Error('No audio file uploaded');
+    }
+
+    // Validate file type
+    const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+    if (!allowedTypes.includes(uploadedFile.mimetype)) {
+      throw new Error('Invalid file type. Only MP3 and WAV files are allowed');
+    }
+
+    // Validate metadata
+    if (!req.body.name?.trim() || !req.body.artist?.trim()) {
+      throw new Error('Track name and artist are required');
+    }
+
+    // Create and save new track
+    const newTrack = new Track({
+      name: req.body.name.trim(),
+      artist: req.body.artist.trim(),
+      uploadedBy: req.user._id,
+      filename: uploadedFile.filename,
+      fileId: uploadedFile.id,
+      coverArt: req.body.coverArt || '/default-cover.jpg'
+    });
+
+    const savedTrack = await newTrack.save();
+    
+    return res.status(201).json({
+      status: 'success',
+      message: 'Track uploaded successfully',
+      track: savedTrack
+    });
+
+  } catch (error) {
+    // Clean up uploaded file if exists
+    if (uploadedFile?.id) {
+      try {
+        await gridfsBucket.delete(uploadedFile.id);
+      } catch (deleteError) {
+        console.error('File cleanup error:', deleteError);
+      }
+    }
+
+    // Log the error
+    console.error('Upload error:', error);
+
+    // Send error response
+    return res.status(error.statusCode || 400).json({
+      status: 'error',
+      message: error.message || 'Upload failed'
+    });
+  }
 });
 
 module.exports = router;

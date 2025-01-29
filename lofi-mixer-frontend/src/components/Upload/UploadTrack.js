@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -19,7 +19,22 @@ const UploadTrack = () => {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { user } = useAuth();
+  const [trackCount, setTrackCount] = useState(0);
+  const UPLOAD_LIMIT = 4;
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check existing track count
+    const checkTrackCount = async () => {
+      try {
+        const response = await api.get('/upload/tracks', { withCredentials: true });
+        setTrackCount(response.data.length);
+      } catch (error) {
+        console.error('Error checking track count:', error);
+      }
+    };
+    checkTrackCount();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,6 +43,9 @@ const UploadTrack = () => {
     setUploadProgress(0);
 
     try {
+      if (trackCount >= UPLOAD_LIMIT) {
+        throw new Error(`Upload limit reached. Maximum ${UPLOAD_LIMIT} tracks allowed.`);
+      }
       if (!file) {
         throw new Error('Please select an audio file');
       }
@@ -64,6 +82,7 @@ const UploadTrack = () => {
       });
 
       if (response.status === 201) {
+        setTrackCount(prev => prev + 1);
         toast.success('Track uploaded successfully');
         navigate('/my-tracks');
       }
@@ -77,7 +96,20 @@ const UploadTrack = () => {
       setUploadProgress(0);
     }
   };
-
+  const renderUploadLimitWarning = () => {
+    if (trackCount >= UPLOAD_LIMIT) {
+      return (
+        <div className="p-4 mb-6 rounded-lg bg-yellow-500/10 border border-yellow-500/50 text-yellow-400">
+          <p>Upload limit reached. Maximum {UPLOAD_LIMIT} tracks allowed.</p>
+        </div>
+      );
+    }
+    return (
+      <p className="text-white/50 text-sm">
+        {UPLOAD_LIMIT - trackCount} uploads remaining
+      </p>
+    );
+  };
 
   if (!user) {
     return (
@@ -104,9 +136,10 @@ const UploadTrack = () => {
           </div>
 
           <div className="p-6">
+          {renderUploadLimitWarning()}
             {error && <ErrorAlert message={error} />}
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" disabled={trackCount >= UPLOAD_LIMIT}>
               <div className="space-y-4">
                 <div className="relative">
                   <input
