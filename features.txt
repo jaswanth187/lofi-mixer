@@ -56,3 +56,10 @@ Better session store setup
 Improved cookie security
 Added domain configuration
 
+
+Other features and bugs to fix:
+
+forgot password
+email authentication
+improving security
+repeat mode is not on for my-tracks
