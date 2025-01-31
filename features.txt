@@ -63,3 +63,8 @@ forgot password
 email authentication
 improving security
 repeat mode is not on for my-tracks
+
+other bugs:
+
+    after cookies or the tokens are expired its not logging out automatically.
+    because of which the tracks are not accessable. 

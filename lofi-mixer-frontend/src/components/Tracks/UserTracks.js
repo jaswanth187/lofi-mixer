@@ -162,6 +162,45 @@ const UserTracks = () => {
     }
   };
 
+  // const loadTrack = async (track) => {
+  //   if (loadedTracks.current.has(track._id)) return;
+  
+  //   setLoadingTrackId(track._id);
+    
+  //   return new Promise((resolve) => {
+  //     const howl = new Howl({
+  //       src: [track.audioUrl],
+  //       html5: true,
+  //       preload: true,
+  //       onload: function() {
+  //         // Get duration immediately when loaded
+  //         const duration = this.duration();
+  //         console.log(`Duration loaded for ${track.name}:`, duration);
+          
+  //         setTracks(prevTracks => 
+  //           prevTracks.map(t => 
+  //             t._id === track._id 
+  //               ? { ...t, duration: duration } 
+  //               : t
+  //           )
+  //         );
+  
+  //         howlRefs.current[track._id] = this;
+  //         loadedTracks.current.add(track._id);
+  //         setLoadingTrackId(null);
+  //         resolve();
+  //       },
+  //       onloaderror: (_, error) => {
+  //         console.error(`Error loading ${track.name}:`, error);
+  //         setLoadingTrackId(null);
+  //         resolve();
+  //       }
+  //     });
+  
+  //     // Start loading the audio
+  //     howl.load();
+  //   });
+  // };
   const loadTrack = async (track) => {
     if (loadedTracks.current.has(track._id)) return;
   
@@ -172,8 +211,9 @@ const UserTracks = () => {
         src: [track.audioUrl],
         html5: true,
         preload: true,
+        loop: true, // Enable loop by default
+        volume: track.volume / 100,
         onload: function() {
-          // Get duration immediately when loaded
           const duration = this.duration();
           console.log(`Duration loaded for ${track.name}:`, duration);
           
@@ -194,6 +234,10 @@ const UserTracks = () => {
           console.error(`Error loading ${track.name}:`, error);
           setLoadingTrackId(null);
           resolve();
+        },
+        onend: () => {
+          // Optional: If you want to handle anything when the track ends
+          console.log(`Track ${track.name} finished playing, will loop automatically`);
         }
       });
   
@@ -201,7 +245,6 @@ const UserTracks = () => {
       howl.load();
     });
   };
-
   const initializeAudio = async (trackId) => {
     if (!audioInitialized) {
       console.log('Initializing audio system...');
