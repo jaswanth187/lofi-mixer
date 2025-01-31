@@ -10,8 +10,19 @@ export const api = axios.create({
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
+      // Clear local storage and cookies
+      localStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(cookie => {
+        document.cookie = cookie
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      });
+      
+      // Force logout and redirect
       window.location.href = '/login';
     }
     return Promise.reject(error);
