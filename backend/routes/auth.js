@@ -215,12 +215,15 @@ router.post("/register", async (req, res, next) => {
     });
 
     if (existingUser) {
-      throw new AppError(
+      const errorMessage =
         existingUser.username.toLowerCase() === username.toLowerCase()
           ? "Username already exists"
-          : "Email already exists",
-        400
-      );
+          : "Email already exists";
+
+      return res.status(400).json({
+        status: "error",
+        message: errorMessage,
+      });
     }
 
     // Hash password

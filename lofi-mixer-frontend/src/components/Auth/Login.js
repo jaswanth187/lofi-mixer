@@ -61,12 +61,12 @@ export default function Login() {
     <div className={styles.authContainer}>
       <form className={styles.authForm} onSubmit={handleSubmit}>
         <h2 className={styles.authTitle}>Login</h2>
-
+        {/* 
         {errors.form && (
           <div className="mb-4 p-2 bg-red-500/10 border border-red-500 rounded text-red-500">
             {errors.form}
           </div>
-        )}
+        )} */}
 
         <div className="space-y-1">
           <input

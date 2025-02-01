@@ -52,8 +52,15 @@ export const loginUser = async (credentials) => {
 };
 
 export const registerUser = async (userData) => {
-  const response = await api.post("/auth/register", userData);
-  return response.data;
+  try {
+    const response = await api.post("/auth/register", userData);
+    return response.data;
+  } catch (error) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw new Error("Registration failed. Please try again.");
+  }
 };
 
 export const googleAuth = () => {

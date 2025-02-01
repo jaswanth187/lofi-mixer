@@ -71,15 +71,34 @@ export default function Register() {
       );
       navigate("/login", {
         state: {
-          message:
-            "Please verify your email before logging in. Check your inbox for the verification link.",
+          message: "Please verify your email before logging in.",
         },
       });
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || "Registration failed";
-      setErrors({ form: errorMessage });
-      toast.error(errorMessage);
+      const errorMessage = error.message;
+
+      if (errorMessage.includes("Username already exists")) {
+        setErrors({
+          username: "Username already taken",
+          form: "Please choose a different username",
+        });
+        toast.error("Username already taken", {
+          duration: 4000,
+          icon: "❌",
+        });
+      } else if (errorMessage.includes("Email already exists")) {
+        setErrors({
+          email: "Email already registered",
+          form: "Please use a different email",
+        });
+        toast.error("Email already registered", {
+          duration: 4000,
+          icon: "❌",
+        });
+      } else {
+        setErrors({ form: errorMessage });
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -105,11 +124,11 @@ export default function Register() {
       <form onSubmit={handleSubmit} className={styles.authForm}>
         <h2 className={styles.authTitle}>Register</h2>
 
-        {errors.form && (
+        {/* {errors.form && (
           <div className="mb-4 p-2 bg-red-500/10 border border-red-500 rounded text-red-500">
             {errors.form}
           </div>
-        )}
+        )} */}
 
         <div className="space-y-1">
           <input
