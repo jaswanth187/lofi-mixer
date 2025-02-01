@@ -68,3 +68,8 @@ other bugs:
 
     after cookies or the tokens are expired its not logging out automatically.
     because of which the tracks are not accessable. 
+
+    Login page is continously reloading when i logout fix that issue.
+
+    Login with the email not with the username
+    Username already exists this error is not being displayed to this user.

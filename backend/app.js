@@ -1,15 +1,15 @@
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-const passport = require('passport');
-const authRoutes = require('./routes/auth');
-const uploadRoutes = require('./routes/upload');
-require('./config/passport');
-const cookieParser = require('cookie-parser');
-const cors = require('cors');
-const multer = require('multer');
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const passport = require("passport");
+const authRoutes = require("./routes/auth");
+const uploadRoutes = require("./routes/upload");
+require("./config/passport");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const multer = require("multer");
 const app = express();
 
 // Middleware order is crucial
@@ -18,105 +18,110 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // CORS setup
-app.use(cors({
-  origin: 'http://localhost:3001',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3001",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
-  throw new Error('SESSION_SECRET is required in environment variables');
+  throw new Error("SESSION_SECRET is required in environment variables");
 }
 
-app.use(session({
-  secret: sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: 'mongodb://127.0.0.1:27017/lofi',
-    collectionName: 'sessions',
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    sameSite: 'lax'
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: "mongodb://127.0.0.1:27017/lofi",
+      ttl: 24 * 60 * 60, // 1 day
+      autoRemove: "native",
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax",
+    },
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Debug middleware
-app.use((req, res, next) => {
-  console.log('Session:', req.session);
-  console.log('User:', req.user);
-  console.log('Is Authenticated:', req.isAuthenticated());
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log('Session:', req.session);
+//   console.log('User:', req.user);
+//   console.log('Is Authenticated:', req.isAuthenticated());
+//   next();
+// });
 // Routes
-app.use('/auth', authRoutes);
-app.use('/upload', uploadRoutes);
+app.use("/auth", authRoutes);
+app.use("/upload", uploadRoutes);
 
 // Update MongoDB connection URI to use IPv4 explicitly
-const mongoURI = 'mongodb://127.0.0.1:27017/lofi';
+const mongoURI = "mongodb://127.0.0.1:27017/lofi";
 
 // Improved MongoDB connection with error handling
-mongoose.connect(mongoURI)
+mongoose
+  .connect(mongoURI)
   .then(() => {
-    console.log('MongoDB connected successfully');
+    console.log("MongoDB connected successfully");
   })
   .catch((err) => {
-    console.error('MongoDB connection error:', err);
+    console.error("MongoDB connection error:", err);
     process.exit(1); // Exit if unable to connect to database
   });
 
 // Handle MongoDB connection events
-mongoose.connection.on('error', err => {
-  console.error('MongoDB connection error:', err);
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB connection error:", err);
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected');
+mongoose.connection.on("disconnected", () => {
+  console.log("MongoDB disconnected");
 });
 
-
-app.get('/', (req, res) => {
-  res.send('Home Page');
+app.get("/", (req, res) => {
+  res.send("Home Page");
 });
 
-app.get('/dashboard', (req, res) => {
-  res.send('Dashboard - User is logged in');
+app.get("/dashboard", (req, res) => {
+  res.send("Dashboard - User is logged in");
 });
 
 // After your routes, before app.listen()
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error("Error:", err);
 
   // Handle Multer errors
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
+    if (err.code === "LIMIT_FILE_SIZE") {
       return res.status(400).json({
-        message: 'File is too large. Maximum size is 10MB'
+        message: "File is too large. Maximum size is 10MB",
       });
     }
     return res.status(400).json({
-      message: `Upload error: ${err.message}`
+      message: `Upload error: ${err.message}`,
     });
   }
 
   // Handle GridFS errors
-  if (err.message && err.message.includes('GridFS')) {
+  if (err.message && err.message.includes("GridFS")) {
     return res.status(500).json({
-      message: 'File storage error'
+      message: "File storage error",
     });
   }
 
   // Handle other errors
   res.status(500).json({
-    message: 'An unexpected error occurred'
+    message: "An unexpected error occurred",
   });
 });
 

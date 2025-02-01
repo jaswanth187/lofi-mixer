@@ -1,23 +1,26 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LofiMixer from './components/LofiMixer/LofiMixer';
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
-import GoogleAuthSuccess from './components/Auth/GoogleAuthSuccess';
-import { AuthProvider } from './components/context/AuthContext';
-import PublicRoute from './components/Layout/PublicRoute';
-import ProtectedRoute from './components/Layout/ProtectedRoute';
-import UploadTrack from './components/Upload/UploadTrack';
-import UserTracks from './components/Tracks/UserTracks';
-import Navbar from './components/Layout/Navbar';
-import { Toaster } from 'react-hot-toast';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LofiMixer from "./components/LofiMixer/LofiMixer";
+import Login from "./components/Auth/Login";
+import Register from "./components/Auth/Register";
+import GoogleAuthSuccess from "./components/Auth/GoogleAuthSuccess";
+import { AuthProvider } from "./components/context/AuthContext";
+import PublicRoute from "./components/Layout/PublicRoute";
+import ProtectedRoute from "./components/Layout/ProtectedRoute";
+import UploadTrack from "./components/Upload/UploadTrack";
+import UserTracks from "./components/Tracks/UserTracks";
+import Navbar from "./components/Layout/Navbar";
+import { Toaster } from "react-hot-toast";
+import EmailVerification from "./components/Auth/EmailVerification";
+
 function App() {
+  console.log("App rendered");
   return (
-    <AuthProvider>
-      <BrowserRouter>
-      <Toaster position="top-right" />
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster position="top-right" />
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-          <Navbar />
           <Routes>
+            <Route path="*" element={<Navbar />} />
             <Route path="/" element={<LofiMixer />} />
             <Route
               path="/login"
@@ -34,6 +37,10 @@ function App() {
                   <Register />
                 </PublicRoute>
               }
+            />
+            <Route
+              path="/verify-email/:token"
+              element={<EmailVerification />}
             />
             <Route
               path="/auth/google/success"
@@ -61,8 +68,8 @@ function App() {
             />
           </Routes>
         </div>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

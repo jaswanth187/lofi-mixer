@@ -1,59 +1,63 @@
-import { createContext, useState, useContext, useEffect } from "react";
-import { api } from '../services/api';
-const AuthContext = createContext(null);
+import {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useEffect,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
+
+export const AuthContext = createContext(null);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false); // Set loading to false after checking storage
-  }, []);
-
-  useEffect(() => {
-    const checkAuthStatus = async () => {
+    const checkAuth = async () => {
       try {
-        await api.get("/auth/me");
-      } catch (error) {
-        if (error.response?.status === 401) {
-          logout();
+        const response = await api.get("/auth/me");
+        if (response.data.user) {
+          setUser(response.data.user);
         }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      } finally {
+        setLoading(false);
       }
     };
-
-    const interval = setInterval(checkAuthStatus, 5 * 60 * 1000); // Check every 5 minutes
-
-    // Initial check
-    checkAuthStatus();
-
-    return () => clearInterval(interval);
+    checkAuth();
   }, []);
 
-  const login = (userData) => {
+  const login = useCallback((userData) => {
     setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
-    localStorage.clear();
-    // Clear all cookies
-    document.cookie.split(";").forEach((cookie) => {
-      const name = cookie.split("=")[0].trim();
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-    });
-    window.location.href = "/login";
+    localStorage.removeItem("user");
+    api
+      .get("/auth/logout")
+      .then(() => navigate("/login"))
+      .catch((err) => console.error("Logout error:", err));
+  }, [navigate]);
+
+  const value = {
+    user,
+    login,
+    logout,
+    loading,
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-export const useAuth = () => useContext(AuthContext);
