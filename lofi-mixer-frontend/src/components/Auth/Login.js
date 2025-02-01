@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 
 export default function Login() {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
@@ -22,9 +22,14 @@ export default function Login() {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!credentials.username.trim()) {
-      newErrors.username = "Username is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!credentials.email) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(credentials.email)) {
+      newErrors.email = "Please enter a valid email";
     }
+
     if (!credentials.password.trim()) {
       newErrors.password = "Password is required";
     }
@@ -70,15 +75,15 @@ export default function Login() {
 
         <div className="space-y-1">
           <input
-            type="text"
-            name="username"
-            placeholder="Username"
+            type="email"
+            name="email"
+            placeholder="Email"
             value={credentials.username}
             onChange={(e) =>
-              setCredentials({ ...credentials, username: e.target.value })
+              setCredentials({ ...credentials, email: e.target.value })
             }
             className={`${styles.authInput} ${
-              errors.username ? "border-red-500" : ""
+              errors.email ? "border-red-500" : ""
             }`}
             disabled={isLoading}
           />

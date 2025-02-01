@@ -52,7 +52,10 @@ export const resetPassword = async (token, password) => {
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await api.post("/auth/login", credentials);
+    const response = await api.post("/auth/login", {
+      email: credentials.email.toLowerCase(),
+      password: credentials.password,
+    });
     return response.data;
   } catch (error) {
     throw new Error(handleApiError(error));
