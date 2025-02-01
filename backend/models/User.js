@@ -1,30 +1,89 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
   googleId: String,
   username: {
     type: String,
-    required: true
+    required: true,
   },
   password: String,
   email: {
     type: String,
-    required: true
+    required: true,
   },
   firstName: String,
   lastName: String,
   profilePicture: String,
   provider: {
     type: String,
-    enum: ['local', 'google'],
-    default: 'local'
+    enum: ["local", "google"],
+    default: "local",
   },
   emailVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
   verificationToken: String,
-  verificationTokenExpires: Date
+  verificationTokenExpires: Date,
+  // Add password reset fields
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+  created: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-module.exports = mongoose.model('User', userSchema);
+// Hash password before saving
+userSchema.pre("save", async function (next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified("password") || this.provider === "google") {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password) return false;
+
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Method to generate password reset token
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.resetPasswordToken = resetToken;
+  this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  return resetToken;
+};
+
+// Method to clear password reset token
+userSchema.methods.clearPasswordResetToken = function () {
+  this.resetPasswordToken = undefined;
+  this.resetPasswordExpires = undefined;
+};
+
+// Virtual for full name
+userSchema.virtual("fullName").get(function () {
+  if (this.firstName && this.lastName) {
+    return `${this.firstName} ${this.lastName}`;
+  }
+  return this.username;
+});
+
+const User = mongoose.model("User", userSchema);
+
+module.exports = User;

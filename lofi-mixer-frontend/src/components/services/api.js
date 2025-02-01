@@ -1,40 +1,28 @@
 import axios from "axios";
 
+const BACKEND_URL = "http://localhost:3000";
+const FRONTEND_URL = "http://localhost:3001";
+
 export const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: BACKEND_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     if (error.response?.status === 401) {
-//       // Clear local storage and cookies
-//       localStorage.clear();
-
-//       // Clear cookies
-//       document.cookie.split(";").forEach(cookie => {
-//         document.cookie = cookie
-//           .replace(/^ +/, "")
-//           .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
-//       });
-
-//       // Force logout and redirect
-//       window.location.href = '/login';
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Don't redirect to login for password reset related routes
+    const isPasswordResetRoute =
+      window.location.pathname.includes("reset-password") ||
+      window.location.pathname.includes("forgot-password");
+
     if (
       error.response?.status === 401 &&
-      !window.location.pathname.includes("/login")
+      !window.location.pathname.includes("/login") &&
+      !isPasswordResetRoute
     ) {
       localStorage.clear();
       window.location.href = "/login";
@@ -42,6 +30,26 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+export const sendPasswordResetEmail = async (email) => {
+  try {
+    const response = await api.post("/auth/forgot-password", { email });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
+export const resetPassword = async (token, password) => {
+  try {
+    const response = await api.post(`/auth/reset-password/${token}`, {
+      password,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
+  }
+};
+
 export const loginUser = async (credentials) => {
   try {
     const response = await api.post("/auth/login", credentials);

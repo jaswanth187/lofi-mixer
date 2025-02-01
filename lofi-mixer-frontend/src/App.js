@@ -11,7 +11,8 @@ import UserTracks from "./components/Tracks/UserTracks";
 import Navbar from "./components/Layout/Navbar";
 import { Toaster } from "react-hot-toast";
 import EmailVerification from "./components/Auth/EmailVerification";
-
+import ResetPassword from "./components/Auth/ResetPassword";
+import ForgotPassword from "./components/Auth/ForgotPassword";
 function App() {
   console.log("App rendered");
   return (
@@ -19,8 +20,9 @@ function App() {
       <AuthProvider>
         <Toaster position="top-right" />
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+          <Navbar />
           <Routes>
-            <Route path="*" element={<Navbar />} />
+            {/* <Route path="*" element={<Navbar />} /> */}
             <Route path="/" element={<LofiMixer />} />
             <Route
               path="/login"
@@ -38,10 +40,28 @@ function App() {
                 </PublicRoute>
               }
             />
+
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/reset-password/:token"
+              element={
+                <PublicRoute>
+                  <ResetPassword />
+                </PublicRoute>
+              }
+            />
             <Route
               path="/verify-email/:token"
               element={<EmailVerification />}
             />
+
             <Route
               path="/auth/google/success"
               element={

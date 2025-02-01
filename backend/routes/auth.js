@@ -8,6 +8,7 @@ const crypto = require("node:crypto");
 const {
   sendVerificationEmail,
   emailLimiter,
+  sendPasswordResetEmail,
 } = require("../services/emailService");
 
 const ensureAuthenticated = (req, res, next) => {
@@ -16,6 +17,7 @@ const ensureAuthenticated = (req, res, next) => {
   }
   next();
 };
+
 router.get("/google", (req, res, next) => {
   console.log("Starting Google OAuth"); // Debug log
   passport.authenticate("google", {
@@ -32,7 +34,6 @@ router.get("/google/callback", (req, res, next) => {
   })(req, res, next);
 });
 
-// Auth check endpoint
 router.get("/me", ensureAuthenticated, (req, res) => {
   res.json({
     status: "success",
@@ -44,64 +45,6 @@ router.get("/me", ensureAuthenticated, (req, res) => {
   });
 });
 
-// Manual Login Routes
-// router.post("/login", async (req, res, next) => {
-//   try {
-//     const { username, password } = req.body;
-
-//     // Input validation
-//     if (!username || !password) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Username and password are required",
-//       });
-//     }
-
-//     // Find user first
-//     const user = await User.findOne({ username });
-//     if (!user) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Invalid username or password",
-//       });
-//     }
-
-//     // Check email verification
-//     if (!user.emailVerified) {
-//       throw new AppError("Please verify your email before logging in", 401);
-//     }
-
-//     // Check password
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) {
-//       return res.status(400).json({
-//         status: "error",
-//         message: "Invalid username or password",
-//       });
-//     }
-
-//     // Login user
-//     await new Promise((resolve, reject) => {
-//       req.login(user, (err) => {
-//         if (err) reject(err);
-//         else resolve();
-//       });
-//     });
-
-//     // Send success response
-//     return res.status(200).json({
-//       status: "success",
-//       message: "Login successful",
-//       user: {
-//         id: user._id,
-//         username: user.username,
-//         email: user.email,
-//       },
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// });
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) {
@@ -322,6 +265,95 @@ router.post("/resend-verification", async (req, res, next) => {
       message: "Verification email resent successfully",
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// Reset password endpoint
+router.post("/reset-password/:token", async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    console.log("Attempting password reset for token:", token);
+
+    // Validate password
+    if (!password || password.length < 6) {
+      throw new AppError("Password must be at least 6 characters long", 400);
+    }
+
+    if (!/(?=.*[0-9])/.test(password)) {
+      throw new AppError("Password must contain at least one number", 400);
+    }
+
+    // Find user with valid reset token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      console.log("No user found for token:", token);
+      throw new AppError("Invalid or expired reset token", 400);
+    }
+
+    console.log("Found user for password reset:", user._id);
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Update user document with new password
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          password: hashedPassword,
+          resetPasswordToken: undefined,
+          resetPasswordExpires: undefined,
+        },
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      throw new AppError("Error updating password", 500);
+    }
+
+    console.log("Password successfully updated for user:", user._id);
+
+    res.status(200).json({
+      status: "success",
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    console.error("Password reset error:", error);
+    next(error);
+  }
+});
+
+router.post("/forgot-password", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      throw new AppError("User not found with this email", 404);
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    await sendPasswordResetEmail(email, resetToken);
+
+    res.status(200).json({
+      status: "success",
+      message: "Password reset link sent to email",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
     next(error);
   }
 });

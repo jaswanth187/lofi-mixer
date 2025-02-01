@@ -105,7 +105,11 @@ export default function Login() {
             <p className="text-red-500 text-sm">{errors.password}</p>
           )}
         </div>
-
+        <div className="flex items-center justify-between mt-4">
+          <Link to="/forgot-password" className={styles.link}>
+            Forgot Password?
+          </Link>
+        </div>
         <button
           type="submit"
           className={`${styles.authButton} ${
