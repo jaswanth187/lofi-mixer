@@ -20,7 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS setup
 app.use(
   cors({
-    origin: "http://localhost:3001",
+    origin: "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -38,8 +38,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: "mongodb://127.0.0.1:27017/lofi",
-      ttl: 24 * 60 * 60, // 1 day
+      mongoUrl: process.env.DB_CONNECTION_STRING,
+      ttl: 24 * 60 * 60,
       autoRemove: "native",
     }),
     cookie: {
@@ -66,17 +66,20 @@ app.use("/auth", authRoutes);
 app.use("/upload", uploadRoutes);
 
 // Update MongoDB connection URI to use IPv4 explicitly
-const mongoURI = "mongodb://127.0.0.1:27017/lofi";
+const mongoURI = process.env.DB_CONNECTION_STRING;
 
 // Improved MongoDB connection with error handling
 mongoose
-  .connect(mongoURI)
+  .connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
-    console.log("MongoDB connected successfully");
+    console.log("MongoDB Atlas connected successfully");
   })
   .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit if unable to connect to database
+    console.error("MongoDB Atlas connection error:", err);
+    process.exit(1);
   });
 
 // Handle MongoDB connection events
@@ -125,7 +128,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server started on http://localhost:${PORT}`);
 });

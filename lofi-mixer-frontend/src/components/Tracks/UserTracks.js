@@ -174,7 +174,7 @@ const UserTracks = () => {
         isPlaying: false,
         duration: null, // Initialize duration as null
         audioUrl: `${
-          process.env.REACT_APP_BACKEND_URL || "http://localhost:3000"
+          process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"
         }/upload/track/${track.filename}`,
         coverImage: getCoverForTrack(track._id),
       }));
