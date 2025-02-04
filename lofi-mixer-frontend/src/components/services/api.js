@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = process.env.BACKEND_URL;
 // const FRONTEND_URL = "http://localhost:3001";
 
 export const api = axios.create({
@@ -76,7 +76,7 @@ export const registerUser = async (userData) => {
 
 export const googleAuth = () => {
   // Using absolute URL for backend
-  window.location.href = "http://localhost:5000/auth/google";
+  window.location.href = `${BACKEND_URL}/auth/google`;
 };
 
 export const checkAuthStatus = async () => {

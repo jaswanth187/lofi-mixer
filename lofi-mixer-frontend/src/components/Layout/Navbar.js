@@ -37,7 +37,7 @@ const Navbar = () => {
   // Enhanced logout handler
   const handleLogout = async () => {
     try {
-      await axios.get("http://localhost:5000/auth/logout", {
+      await axios.get(`${process.env.REACT_APP_BACKEND_URL}/auth/logout`, {
         withCredentials: true,
       });
       await logout();
