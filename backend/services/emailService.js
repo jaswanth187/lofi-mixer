@@ -2,42 +2,34 @@ const nodemailer = require("nodemailer");
 const rateLimit = require("express-rate-limit");
 
 const emailLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: "Too many verification attempts, please try again later",
 });
 
 const createTransporter = async () => {
-  // Create reusable transporter
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // use SSL
+    service: "gmail",
     auth: {
       user: process.env.EMAIL_USERNAME,
       pass: process.env.EMAIL_PASSWORD,
     },
-    tls: {
-      // do not fail on invalid certs
-      rejectUnauthorized: false,
-    },
-    debug: true, // show debug output
-    logger: true, // log information in console
+    debug: true,
+    logger: true,
   });
 
-  // Verify connection configuration
   try {
     await transporter.verify();
     console.log("Email service ready");
     return transporter;
   } catch (error) {
-    console.error("Email service error details:", {
+    console.error("Email service error:", {
+      error: error.message,
       code: error.code,
-      response: error.response,
-      responseCode: error.responseCode,
       command: error.command,
+      response: error.response,
     });
-    throw new Error(`Email service configuration failed: ${error.message}`);
+    throw error;
   }
 };
 
@@ -47,10 +39,7 @@ const sendVerificationEmail = async (email, token) => {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
 
     const mailOptions = {
-      from: {
-        name: "Lofi Mixer",
-        address: process.env.EMAIL_USERNAME,
-      },
+      from: `"Lofi Mixer" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "🎵 Verify Your Lofi Mixer Account",
       html: `
@@ -83,49 +72,54 @@ const sendVerificationEmail = async (email, token) => {
         </html>
       `,
       text: `Welcome to Lofi Mixer! Please verify your email by visiting: ${verificationUrl}`,
-      headers: {
-        "X-Priority": "1",
-        "X-MSMail-Priority": "High",
-      },
     };
 
-    // Add retry logic with exponential backoff
     const MAX_RETRIES = 3;
     let retries = 0;
 
     while (retries < MAX_RETRIES) {
       try {
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent successfully:", info.messageId);
+        console.log("Email sent successfully:", {
+          messageId: info.messageId,
+          to: email,
+          response: info.response,
+        });
         return info;
       } catch (error) {
         retries++;
-        console.error(`Email sending attempt ${retries} failed:`, error);
-        if (retries === MAX_RETRIES) {
-          throw error;
-        }
-        // Exponential backoff: 1s, 2s, 4s
+        console.error(`Email sending attempt ${retries} failed:`, {
+          error: error.message,
+          code: error.code,
+          command: error.command,
+          response: error.response,
+        });
+
+        if (retries === MAX_RETRIES) throw error;
+
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * Math.pow(2, retries - 1))
         );
       }
     }
   } catch (error) {
-    console.error("Final email sending error:", error);
-    throw new Error(`Failed to send verification email: ${error.message}`);
+    console.error("Final email sending error:", {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+    });
+    throw error;
   }
 };
+
 const sendPasswordResetEmail = async (email, token) => {
   try {
     const transporter = await createTransporter();
-    // Construct the reset URL properly - token is now passed directly
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     const mailOptions = {
-      from: {
-        name: "Lofi Mixer",
-        address: process.env.EMAIL_USERNAME,
-      },
+      from: `"Lofi Mixer" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Reset Your Lofi Mixer Password",
       html: `
@@ -155,40 +149,52 @@ const sendPasswordResetEmail = async (email, token) => {
         </html>
       `,
       text: `Reset your password by visiting: ${resetUrl}`,
-      headers: {
-        "X-Priority": "1",
-        "X-MSMail-Priority": "High",
-      },
     };
 
-    // Add retry logic with exponential backoff
     const MAX_RETRIES = 3;
     let retries = 0;
 
     while (retries < MAX_RETRIES) {
       try {
         const info = await transporter.sendMail(mailOptions);
-        console.log("Password reset email sent successfully:", info.messageId);
+        console.log("Password reset email sent successfully:", {
+          messageId: info.messageId,
+          to: email,
+          response: info.response,
+        });
         return info;
       } catch (error) {
         retries++;
-        console.error(`Email sending attempt ${retries} failed:`, error);
-        if (retries === MAX_RETRIES) {
-          throw error;
-        }
-        // Exponential backoff: 1s, 2s, 4s
+        console.error(
+          `Password reset email sending attempt ${retries} failed:`,
+          {
+            error: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response,
+          }
+        );
+
+        if (retries === MAX_RETRIES) throw error;
+
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * Math.pow(2, retries - 1))
         );
       }
     }
   } catch (error) {
-    console.error("Final email sending error:", error);
-    throw new Error(`Failed to send password reset email: ${error.message}`);
+    console.error("Final password reset email sending error:", {
+      error: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+    });
+    throw error;
   }
 };
+
 module.exports = {
   sendVerificationEmail,
-  emailLimiter,
   sendPasswordResetEmail,
+  emailLimiter,
 };

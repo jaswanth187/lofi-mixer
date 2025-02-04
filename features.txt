@@ -73,3 +73,9 @@ other bugs:
 
     Username already exists this error is not being displayed to this user.
     Login with the email not with the username
+
+    view password option
+    do not check for the username already exists rather check for the email 
+    because we are logging with the email not with the username.
+    improve the speed of registration. 
+    invalid Credentials issues after registration (hashing issues)

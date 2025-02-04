@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../services/api";
 import styles from "./Auth.module.css";
 import { toast } from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [userData, setUserData] = useState({
@@ -13,6 +14,8 @@ export default function Register() {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   // Form validation
@@ -164,35 +167,45 @@ export default function Register() {
           )}
         </div>
 
-        <div className="space-y-1">
+        <div className="relative space-y-1">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             placeholder="Password"
             value={userData.password}
             onChange={handleChange}
-            className={`${styles.authInput} ${
-              errors.password ? "border-red-500" : ""
-            }`}
+            className={`${styles.authInput} pr-10`}
             disabled={isLoading}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
           {errors.password && (
             <p className="text-red-500 text-sm">{errors.password}</p>
           )}
         </div>
 
-        <div className="space-y-1">
+        <div className="relative space-y-1">
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
             placeholder="Confirm Password"
             value={userData.confirmPassword}
             onChange={handleChange}
-            className={`${styles.authInput} ${
-              errors.confirmPassword ? "border-red-500" : ""
-            }`}
+            className={`${styles.authInput} pr-10`}
             disabled={isLoading}
           />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+          >
+            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
           {errors.confirmPassword && (
             <p className="text-red-500 text-sm">{errors.confirmPassword}</p>
           )}

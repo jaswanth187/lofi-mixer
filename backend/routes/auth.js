@@ -61,16 +61,16 @@ router.post("/login", (req, res, next) => {
     if (!user.emailVerified) {
       return res.status(401).json({
         status: "error",
-        message: "Please verify your email first",
+        message:
+          "Email not verified. Please check your inbox or request a new verification email.",
+        requiresVerification: true,
+        email: user.email,
       });
     }
 
     req.logIn(user, (err) => {
-      if (err) {
-        return next(err);
-      }
-
-      return res.status(200).json({
+      if (err) return next(err);
+      res.json({
         status: "success",
         message: "Login successful",
         user: {
@@ -124,89 +124,46 @@ router.post("/register", async (req, res, next) => {
   try {
     const { username, password, email } = req.body;
 
-    // Enhanced validation
     if (!username || !password || !email) {
       throw new AppError("Please provide username, password and email", 400);
     }
 
-    // Username validation
-    if (username.length < 3) {
-      throw new AppError("Username must be at least 3 characters long", 400);
-    }
-
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       throw new AppError("Please provide a valid email address", 400);
     }
 
-    // Password validation
-    if (password.length < 6) {
-      throw new AppError("Password must be at least 6 characters long", 400);
-    }
-
-    if (!/(?=.*[0-9])/.test(password)) {
-      throw new AppError("Password must contain at least one number", 400);
-    }
-
-    // Check for existing user
     const existingUser = await User.findOne({
-      $or: [
-        { username: { $regex: new RegExp(`^${username}$`, "i") } }, // Case-insensitive username check
-        { email: { $regex: new RegExp(`^${email}$`, "i") } }, // Case-insensitive email check
-      ],
+      email: { $regex: new RegExp(`^${email}$`, "i") },
     });
 
     if (existingUser) {
-      const errorMessage =
-        existingUser.username.toLowerCase() === username.toLowerCase()
-          ? "Username already exists"
-          : "Email already exists";
-
       return res.status(400).json({
         status: "error",
-        message: errorMessage,
+        message: "Email already exists",
       });
     }
 
-    // Hash password
     const verificationToken = crypto.randomBytes(48).toString("hex");
-    const hashedPassword = await bcrypt.hash(password, 12); // Increased from 10 to 12 rounds
 
-    // Create new user
     const newUser = new User({
       username: username.trim(),
-      password: hashedPassword,
+      password: password, // Remove manual hashing
       email: email.toLowerCase().trim(),
-      created: Date.now(),
       verificationToken,
-      verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      verificationTokenExpires: Date.now() + 24 * 60 * 60 * 1000,
       emailVerified: false,
+      provider: "local",
     });
 
     await newUser.save();
-    // Send verification email
-    try {
-      await sendVerificationEmail(email, verificationToken);
-    } catch (emailError) {
-      console.error("Email sending error:", emailError);
-      // Delete the user if email fails
-      await User.deleteOne({ _id: newUser._id });
-      throw new AppError(
-        `Error sending verification email: ${emailError.message}`,
-        500
-      );
-    }
-    // Remove password from response
-    const userResponse = newUser.toObject();
-    delete userResponse.password;
+    await sendVerificationEmail(email, verificationToken);
 
     res.status(201).json({
       status: "success",
       message:
         "Registration successful. Please check your email for verification link.",
       requiresVerification: true,
-      user: userResponse,
     });
   } catch (error) {
     next(error);
@@ -243,7 +200,7 @@ router.get("/verify-email/:token", async (req, res, next) => {
 router.post("/resend-verification", async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       throw new AppError("User not found", 404);
@@ -260,9 +217,9 @@ router.post("/resend-verification", async (req, res, next) => {
 
     await sendVerificationEmail(email, verificationToken);
 
-    res.json({
+    res.status(200).json({
       status: "success",
-      message: "Verification email resent successfully",
+      message: "Verification email sent successfully",
     });
   } catch (error) {
     next(error);

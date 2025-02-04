@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 // const FRONTEND_URL = "http://localhost:3001";
 
 export const api = axios.create({
@@ -71,6 +71,14 @@ export const registerUser = async (userData) => {
       throw new Error(error.response.data.message);
     }
     throw new Error("Registration failed. Please try again.");
+  }
+};
+export const resendVerification = async (email) => {
+  try {
+    const response = await api.post("/auth/resend-verification", { email });
+    return response.data;
+  } catch (error) {
+    throw new Error(handleApiError(error));
   }
 };
 
