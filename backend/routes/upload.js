@@ -94,7 +94,7 @@ router.get("/tracks", ensureAuthenticated, async (req, res) => {
             volume: 50,
             isPlaying: false,
             audioUrl: `${
-              process.env.BACKEND_URL || "http://localhost:5000"
+              process.env.REACT_APP_BACKEND_URL || "http://localhost:5000"
             }/upload/track/${track.filename}`,
           };
         } catch (error) {

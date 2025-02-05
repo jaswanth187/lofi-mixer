@@ -56,7 +56,7 @@ export const tracksData = [
     volume: 50,
     isPlaying: false,
     color: "bg-green-500",
-    coverArt: "/images/please-calm-my-mind.jpg",
+    coverArt: "/images/Please-calm-my-mind.jpg",
     audioUrl: "/audio/please-calm-my-mind.mp3",
   },
   {
